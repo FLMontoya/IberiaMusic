@@ -14,3 +14,7 @@ kotlin {
         jvmTarget = JvmTarget.JVM_11
     }
 }
+
+dependencies {
+    implementation(project(":domain"))
+}
