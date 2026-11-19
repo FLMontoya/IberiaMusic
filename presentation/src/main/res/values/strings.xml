@@ -8,4 +8,10 @@
     <string name="search_error">No se pudo completar la búsqueda. Comprueba tu conexión e inténtalo de nuevo.</string>
     <string name="track_open_detail">Ver detalle de la canción</string>
     <string name="track_subtitle">%1$s · %2$s</string>
+    <string name="detail_back">Volver</string>
+    <string name="detail_artist">Artista</string>
+    <string name="detail_album">Álbum</string>
+    <string name="detail_genre">Género</string>
+    <string name="detail_duration">Duración</string>
+    <string name="detail_release_date">Fecha de lanzamiento</string>
 </resources>
