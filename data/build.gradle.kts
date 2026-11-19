@@ -12,4 +12,8 @@ java {
 
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_11 } }
 
-dependencies { implementation(project(":domain")) }
+dependencies {
+  implementation(project(":domain"))
+
+  testImplementation(libs.junit)
+}
