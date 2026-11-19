@@ -15,4 +15,11 @@ android {
   }
 }
 
-dependencies { implementation(project(":domain")) }
+dependencies {
+  implementation(project(":domain"))
+  implementation(libs.androidx.lifecycle.viewmodel)
+  implementation(libs.kotlinx.coroutines.core)
+
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlinx.coroutines.test)
+}
