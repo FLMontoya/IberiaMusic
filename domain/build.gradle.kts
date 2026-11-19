@@ -12,4 +12,7 @@ java {
 
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_11 } }
 
-dependencies { testImplementation(libs.junit) }
+dependencies {
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlinx.coroutines.test)
+}
