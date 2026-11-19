@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_title">Buscar música</string>
+    <string name="search_label">Buscar canciones, artistas o álbumes</string>
+    <string name="search_idle_hint">Escribe para empezar a buscar</string>
+    <string name="search_loading">Buscando…</string>
+    <string name="search_empty">No se encontraron resultados</string>
+    <string name="search_error">No se pudo completar la búsqueda. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="track_open_detail">Ver detalle de la canción</string>
+    <string name="track_subtitle">%1$s · %2$s</string>
+</resources>
