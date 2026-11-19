@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "IberiaMusic"
 include(":app")
+include(":domain")
