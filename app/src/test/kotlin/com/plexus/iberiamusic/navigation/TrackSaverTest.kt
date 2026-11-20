@@ -43,4 +43,18 @@ class TrackSaverTest {
 
     assertNull(restoreTrack(saved))
   }
+
+  @Test
+  fun `a saved state with a missing required field is restored as no selection`() {
+    assertNull(restoreTrack(listOf(4L, "Song")))
+  }
+
+  @Test
+  fun `a wrong type in an optional field is dropped and the track is still restored`() {
+    val track = Track(id = 5L, name = "Song", artistName = "Artist", genre = "Rock")
+    val saved = saveTrack(track).toMutableList()
+    saved[6] = "not a number"
+
+    assertEquals(track, restoreTrack(saved))
+  }
 }
