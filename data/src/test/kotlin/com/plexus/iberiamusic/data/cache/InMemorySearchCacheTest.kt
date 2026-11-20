@@ -60,6 +60,16 @@ class InMemorySearchCacheTest {
   }
 
   @Test
+  fun `entry is not served when the clock goes backwards`() {
+    clock.advanceBy(10_000)
+    cache.put("queen", tracks)
+
+    clock.advanceBy(-5_000)
+
+    assertNull(cache.get("queen"))
+  }
+
+  @Test
   fun `queries are cached independently`() {
     cache.put("queen", tracks)
 

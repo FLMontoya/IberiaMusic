@@ -21,11 +21,17 @@ class InMemorySearchCache(
   @Synchronized
   fun get(query: String): List<Track>? {
     val entry = entries[query] ?: return null
-    if (timeProvider.nowMillis() - entry.storedAtMillis >= ttlMillis) {
+    if (isExpired(entry)) {
       entries.remove(query)
       return null
     }
     return entry.tracks
+  }
+
+  /** A clock that went backwards cannot be trusted, so the entry is treated as expired. */
+  private fun isExpired(entry: Entry): Boolean {
+    val elapsed = timeProvider.nowMillis() - entry.storedAtMillis
+    return elapsed < 0 || elapsed >= ttlMillis
   }
 
   /** Stores [tracks] for [query], replacing any previous entry and restarting its TTL. */
