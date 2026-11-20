@@ -5,33 +5,37 @@ import androidx.lifecycle.viewModelScope
 import com.plexus.iberiamusic.domain.model.SearchResult
 import com.plexus.iberiamusic.domain.usecase.SearchTracksUseCase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 
 /**
- * Turns what the user types into a [SearchUiState]. A new query cancels the search in flight
- * ([flatMapLatest]), so results of a superseded query are never emitted.
+ * Turns what the user types into a [SearchUiState]. Every change of the query shows
+ * [SearchUiState.Loading] at once, waits [DEBOUNCE_MILLIS] and then searches, all inside
+ * [flatMapLatest]: a new query cancels the one in flight, so results of a superseded query are
+ * never emitted and never sit next to the new text.
  */
-@OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModel(private val searchTracks: SearchTracksUseCase) : ViewModel() {
+
+  /** A search to run. [immediate] skips the debounce; [nonce] makes repeated requests distinct. */
+  private data class Request(val text: String, val immediate: Boolean = false, val nonce: Int = 0)
 
   private val _query = MutableStateFlow("")
   val query: StateFlow<String> = _query.asStateFlow()
 
+  private val request = MutableStateFlow(Request(""))
+  private var searchCount = 0
+
   val uiState: StateFlow<SearchUiState> =
-      _query
-          .debounce(DEBOUNCE_MILLIS)
-          .distinctUntilChanged()
-          .flatMapLatest { text -> search(text) }
+      request
+          .flatMapLatest { search(it) }
           .stateIn(
               viewModelScope,
               SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -40,15 +44,22 @@ class SearchViewModel(private val searchTracks: SearchTracksUseCase) : ViewModel
 
   fun onQueryChange(text: String) {
     _query.value = text
+    request.value = Request(text)
   }
 
-  private fun search(text: String): Flow<SearchUiState> = flow {
-    if (text.isBlank()) {
+  /** Searches the current query right away (the keyboard's search action); also retries errors. */
+  fun onSearch() {
+    request.value = Request(_query.value, immediate = true, nonce = ++searchCount)
+  }
+
+  private fun search(request: Request): Flow<SearchUiState> = flow {
+    if (request.text.isBlank()) {
       emit(SearchUiState.Idle)
       return@flow
     }
     emit(SearchUiState.Loading)
-    emit(searchTracks(text).toUiState())
+    if (!request.immediate) delay(DEBOUNCE_MILLIS)
+    emit(searchTracks(request.text).toUiState())
   }
 
   private fun SearchResult.toUiState(): SearchUiState =

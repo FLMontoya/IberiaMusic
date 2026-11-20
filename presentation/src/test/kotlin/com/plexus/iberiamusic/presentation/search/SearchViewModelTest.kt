@@ -111,6 +111,59 @@ class SearchViewModelTest {
       }
 
   @Test
+  fun `typing shows Loading at once so earlier results are not left next to the new text`() =
+      runTest(dispatcher) {
+        repository.results["queen"] = SearchResult.Success(queenTracks)
+        val states = collectStates()
+        type("queen")
+
+        viewModel.onQueryChange("queens")
+        runCurrent()
+
+        assertEquals(SearchUiState.Loading, states.last())
+      }
+
+  @Test
+  fun `the search action searches without waiting for the debounce`() =
+      runTest(dispatcher) {
+        repository.results["queen"] = SearchResult.Success(queenTracks)
+        val states = collectStates()
+
+        viewModel.onQueryChange("queen")
+        viewModel.onSearch()
+        runCurrent()
+
+        assertEquals(listOf("queen"), repository.receivedQueries)
+        assertEquals(SearchUiState.Content(queenTracks), states.last())
+      }
+
+  @Test
+  fun `the search action retries a failed search`() =
+      runTest(dispatcher) {
+        repository.results["queen"] = SearchResult.Error(IOException("offline"))
+        val states = collectStates()
+        type("queen")
+        repository.results["queen"] = SearchResult.Success(queenTracks)
+
+        viewModel.onSearch()
+        runCurrent()
+
+        assertEquals(SearchUiState.Content(queenTracks), states.last())
+      }
+
+  @Test
+  fun `the search action with a blank query stays Idle`() =
+      runTest(dispatcher) {
+        val states = collectStates()
+
+        viewModel.onSearch()
+        runCurrent()
+
+        assertEquals(SearchUiState.Idle, states.last())
+        assertTrue(repository.receivedQueries.isEmpty())
+      }
+
+  @Test
   fun `a cancelled search never emits its results`() =
       runTest(dispatcher) {
         val staleGate = repository.hold("queen")

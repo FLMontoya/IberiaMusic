@@ -62,6 +62,25 @@ class SearchRepositoryImplTest {
   }
 
   @Test
+  fun `queries that differ only in case or surrounding spaces share a cache entry`() = runTest {
+    repository.search("Queen")
+
+    repository.search("  queen ")
+    repository.search("QUEEN")
+
+    assertEquals(1, api.callCount)
+  }
+
+  @Test
+  fun `tracks with a repeated id are returned once`() = runTest {
+    api.response = responseOf(1L, 2L, 1L)
+
+    val result = repository.search("queen")
+
+    assertEquals(listOf(1L, 2L), (result as SearchResult.Success).tracks.map { it.id })
+  }
+
+  @Test
   fun `no results map to Empty`() = runTest {
     api.response = ITunesSearchResponseDto()
 

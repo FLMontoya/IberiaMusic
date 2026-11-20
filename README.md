@@ -7,7 +7,7 @@ App Android de búsqueda de música con pantalla de detalle, hecha con Kotlin y 
 [iTunes Search API](https://itunes.apple.com/search?term=queen&media=music): pública y sin API key.
 Se consulta `search?term=...&media=music&entity=song&limit=50`, es decir, solo canciones y un
 máximo de 50 resultados. El detalle muestra nombre, artista, álbum, género, duración y fecha de
-lanzamiento; los campos que iTunes no devuelve se omiten.
+lanzamiento, junto con la carátula; los campos que iTunes no devuelve se omiten.
 
 ## Cómo ejecutar
 
@@ -54,35 +54,46 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
   actualiza la caché. Los errores no se cachean.
 - El reloj es una interfaz propia (`TimeProvider`) inyectada en la caché, de modo que los tests
   simulan el paso del tiempo sin esperas.
-- La clave es el texto de la query ya recortado, sin pasar a minúsculas: "Queen" y "queen" son
-  entradas distintas.
+- La clave es la query sin espacios en los extremos y en minúsculas: "Queen", " queen " y "QUEEN"
+  comparten entrada.
+- Los resultados se deduplican por `id`, porque la lista usa el `id` como clave y debe ser única.
 - La caché vive en `AppContainer`, así que sobrevive a cambios de configuración y de pantalla,
   pero no al cierre del proceso.
 
 ### Cancelación
 
-- `SearchViewModel` encadena `debounce(300 ms)`, `distinctUntilChanged` y `flatMapLatest`. Una
-  query nueva cancela la búsqueda en curso, y los resultados de una búsqueda cancelada nunca se
-  emiten.
+- `SearchViewModel` usa `flatMapLatest`: cada cambio de texto emite `Loading` al instante, espera
+  300 ms (el debounce) y busca, todo dentro del flujo que `flatMapLatest` cancela. Una query nueva
+  cancela la búsqueda en curso, y los resultados de una búsqueda cancelada nunca se emiten.
+- El debounce está dentro de `flatMapLatest` (un `delay`) y no como operador `debounce` previo: con
+  el operador, durante los 300 ms seguía visible la lista de la query anterior junto al texto nuevo.
+- La acción de búsqueda del teclado salta el debounce y también reintenta tras un error.
 - No se guarda ningún `Job` a mano. `CancellationException` siempre se relanza, nunca se captura.
-- Durante los 300 ms de debounce todavía se muestra el resultado de la búsqueda anterior; solo se
-  descarta cuando llega una query nueva.
 
 ### Accesibilidad
 
 - Textos en `sp` y pantallas con scroll, comprobadas con la fuente al 200 %.
-- Áreas táctiles de al menos 48 dp.
+- Áreas táctiles de al menos 48 dp, también el botón de borrar la búsqueda.
+- Las carátulas de la lista son decorativas (`contentDescription = null`): la fila ya dice el
+  título y el artista. La del detalle sí lleva descripción ("Carátula de …").
+- El error se comunica con icono y texto, no solo con color.
 - Títulos con `heading()` y cada fila de la lista (y cada campo del detalle) agrupada con
   `mergeDescendants`, de modo que TalkBack la lee como un único elemento.
 - Estados de carga, vacío y error anunciados con `liveRegion`.
 - Campo de búsqueda con `label` visible y `ImeAction.Search`.
 - Todos los textos en `strings.xml`.
-- Pendiente: el contraste no se mide en los tests y TalkBack y la navegación por teclado no se han
-  probado en un dispositivo.
+- Verificado en un emulador (Pixel 6, API 37): tamaño de fuente al 200 %, tema oscuro,
+  TalkBack y navegación por teclado (ver [Capturas](#capturas)).
+- No verificado: que TalkBack anuncie en voz alta los cambios de estado (`liveRegion`; una captura
+  solo muestra el foco), el Accessibility Scanner, ni el foco de TalkBack sobre la carátula y los
+  campos del detalle (el teclado solo enfoca elementos con acción).
 
 ### Otras
 
-- El detalle no muestra la carátula: haría falta una librería de imágenes y no se pedía.
+- Las carátulas se cargan con [Coil](https://coil-kt.github.io/coil/). La lista usa la miniatura de
+  100 px y el detalle pide la de 600 px cambiando el tamaño en la URL de iTunes.
+- El `NavHost` aplica `imePadding`, para que el teclado no tape el final de la lista, y navega con
+  `launchSingleTop`, para que un doble toque no apile dos detalles.
 - La canción elegida se guarda con `rememberSaveable`, así que el detalle se restaura tras la
   muerte del proceso; el texto de búsqueda no.
 
@@ -91,10 +102,84 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 Se ejecutan en JVM con `./gradlew test`:
 
 - `domain`: caso de uso con repositorio fake.
-- `data`: caché (acierto, fallo y expiración), mapper y repositorio (con caché válida no llama a
-  la red; con caché expirada, refresca).
+- `data`: caché (acierto, fallo y expiración), mapper, repositorio (con caché válida no llama a
+  la red; con caché expirada, refresca) y contrato de `ITunesApi` contra un `MockWebServer`.
 - `presentation`: ViewModel (cancelación), y semantics de las pantallas con Robolectric.
 - `app`: navegación búsqueda → detalle y guardado de la canción seleccionada.
+
+## Capturas
+
+Tomadas en un emulador Pixel 6 (API 37, en español) con la app y la API reales de iTunes.
+
+### Flujo principal
+
+| 1. Inicio | 2. Resultados | 3. Detalle |
+|---|---|---|
+| <img src="docs/screenshots/01-inicial.png" width="240" alt="Pantalla de búsqueda vacía con el mensaje «Escribe para empezar a buscar»"> | <img src="docs/screenshots/02-resultados.png" width="240" alt="Lista de resultados para «queen» con carátula, título y artista"> | <img src="docs/screenshots/03-detalle.png" width="240" alt="Detalle de Bohemian Rhapsody con carátula y cinco campos"> |
+
+### Estados vacío y error
+
+| 4. Sin resultados | 5. Sin conexión |
+|---|---|
+| <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje de error en rojo con icono de aviso"> |
+
+El mensaje de vacío cita lo buscado. El de error lleva icono y texto, y la tecla de búsqueda del
+teclado reintenta la búsqueda al recuperar la conexión.
+
+### Fuente al 200 % y tema oscuro
+
+| 6. Lista al 200 % | 7. Detalle al 200 % | 8. Detalle al 200 % (scroll) |
+|---|---|---|
+| <img src="docs/screenshots/06-fuente200-lista.png" width="240" alt="Lista con la fuente al 200 %"> | <img src="docs/screenshots/07-fuente200-detalle.png" width="240" alt="Detalle con la fuente al 200 %"> | <img src="docs/screenshots/08-fuente200-detalle-scroll.png" width="240" alt="Detalle al 200 % desplazado hasta el último campo"> |
+
+| 9. Lista (oscuro) | 10. Detalle (oscuro) |
+|---|---|
+| <img src="docs/screenshots/09-oscuro-lista.png" width="240" alt="Lista en tema oscuro"> | <img src="docs/screenshots/10-oscuro-detalle.png" width="240" alt="Detalle en tema oscuro"> |
+
+Ratios de contraste medidos sobre los píxeles de las capturas (fórmula WCAG; el mínimo para texto
+es 4,5:1):
+
+| Elemento | Tema | Texto | Fondo | Ratio |
+|---|---|---|---|---|
+| Título de la fila | Claro | `#1D1B20` | `#FEF7FF` | 16,2:1 |
+| Subtítulo y etiqueta de campo | Claro | `#49454F` | `#FEF7FF` | 8,9:1 |
+| Mensaje de error | Claro | `#B3261E` | `#FEF7FF` | 6,2:1 |
+| Título de la fila | Oscuro | `#E6E0E9` | `#141218` | 14,3:1 |
+| Subtítulo y etiqueta de campo | Oscuro | `#CAC4D0` | `#141218` | 10,9:1 |
+
+El mensaje de error en el tema oscuro no se midió.
+
+### TalkBack
+
+Con TalkBack activado; el recuadro verde es su foco, es decir, lo que leería. Para moverse se usó
+el teclado (`Tab`).
+
+| 11. Título | 12. Campo | 13. Borrar |
+|---|---|---|
+| <img src="docs/screenshots/11-talkback-titulo.png" width="240" alt="Foco de TalkBack en el título «Buscar música»"> | <img src="docs/screenshots/12-talkback-campo.png" width="240" alt="Foco de TalkBack en el campo de búsqueda con su etiqueta"> | <img src="docs/screenshots/13-talkback-borrar.png" width="240" alt="Foco de TalkBack en el botón de borrar la búsqueda"> |
+| Encabezado (`heading()`). | Etiqueta visible; el teclado muestra la tecla de búsqueda. | Botón de 48 dp con descripción. |
+
+| 14. Fila | 15. Fila siguiente | 16. Detalle |
+|---|---|---|
+| <img src="docs/screenshots/14-talkback-fila.png" width="240" alt="Foco de TalkBack sobre una fila completa"> | <img src="docs/screenshots/15-talkback-fila-siguiente.png" width="240" alt="Foco de TalkBack sobre la fila siguiente"> | <img src="docs/screenshots/16-talkback-detalle-volver.png" width="240" alt="Foco de TalkBack en el botón Volver del detalle"> |
+| Carátula, título y artista forman un único elemento. | El siguiente foco salta a la fila contigua. | Al abrir el detalle, el foco empieza en «Volver». |
+
+## Revisión en emulador: errores encontrados
+
+Detectado en el emulador y corregido:
+
+- El teclado tapaba el final de la lista de resultados (faltaba `imePadding`).
+
+Detectado al revisar el código y compararlo con otro proyecto de la misma prueba, y corregido con
+tests:
+
+- Durante el debounce podía seguir visible la lista de la búsqueda anterior junto al texto nuevo.
+- Las consultas "Queen" y "queen" no compartían caché.
+- Un doble toque sobre una fila podía apilar dos pantallas de detalle (`launchSingleTop`).
+- Los resultados repetidos de iTunes romperían la clave única de la lista.
+
+Sin problemas: la compilación `release` (con R8) arranca y busca bien en el emulador, y la rotación
+y el botón Atrás conservan la lista y el detalle.
 
 ## Flujo de trabajo
 

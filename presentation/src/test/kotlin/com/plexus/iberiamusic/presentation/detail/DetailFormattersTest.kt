@@ -40,4 +40,17 @@ class DetailFormattersTest {
   fun `falls back to the original text when the date cannot be parsed`() {
     assertEquals("someday", formatReleaseDate("someday", Locale.US))
   }
+
+  @Test
+  fun `asks iTunes for a larger artwork than the thumbnail`() {
+    assertEquals(
+        "https://is1.mzstatic.com/image/thumb/Music/a/600x600bb.jpg",
+        largeArtworkUrl("https://is1.mzstatic.com/image/thumb/Music/a/100x100bb.jpg"),
+    )
+  }
+
+  @Test
+  fun `keeps an artwork url that has no size to replace`() {
+    assertEquals("https://example.com/cover.jpg", largeArtworkUrl("https://example.com/cover.jpg"))
+  }
 }
