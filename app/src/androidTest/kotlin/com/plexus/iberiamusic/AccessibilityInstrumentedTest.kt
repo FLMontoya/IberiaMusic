@@ -38,6 +38,7 @@ import com.plexus.iberiamusic.presentation.search.SearchViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
 import java.io.IOException
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -220,6 +221,36 @@ class AccessibilityInstrumentedTest {
     rule
         .onNode(hasClickAction() and hasText(string(R.string.detail_back)))
         .assertTouchTargetIsAtLeast48dp()
+    rule.onRoot().tryPerformAccessibilityChecks()
+  }
+
+  @Test
+  fun loadingStateIsAnnouncedPolitelyAndPassesTheChecks() {
+    show(SearchResult.Empty)
+    // Re-stubbed so the search never completes and the screen stays in the loading state.
+    coEvery { repository.search(any()) } coAnswers { CompletableDeferred<SearchResult>().await() }
+
+    rule.onNode(hasSetTextAction()).performTextInput("queen")
+    waitForText(string(R.string.search_loading))
+
+    rule.onNodeWithText(string(R.string.search_loading)).assert(liveRegion(LiveRegionMode.Polite))
+    rule.onRoot().tryPerformAccessibilityChecks()
+  }
+
+  @Test
+  fun detailGroupsEveryFieldAndShowsADashForTheMissingOnes() {
+    val sparse = Track(id = 2L, name = "Heroes", artistName = "Bowie")
+    show(SearchResult.Success(listOf(sparse)))
+    searchFor("bowie", sparse.name)
+    rule.onNode(hasClickAction() and hasText(sparse.name)).performClick()
+    waitForText(string(R.string.detail_back))
+
+    val dash = string(R.string.detail_value_missing)
+    rule.onNode(hasText(string(R.string.detail_artist)) and hasText("Bowie")).assertExists()
+    rule.onNode(hasText(string(R.string.detail_album)) and hasText(dash)).assertExists()
+    rule.onNode(hasText(string(R.string.detail_genre)) and hasText(dash)).assertExists()
+    rule.onNode(hasText(string(R.string.detail_duration)) and hasText(dash)).assertExists()
+    rule.onNode(hasText(string(R.string.detail_release_date)) and hasText(dash)).assertExists()
     rule.onRoot().tryPerformAccessibilityChecks()
   }
 
