@@ -70,6 +70,45 @@ class InMemorySearchCacheTest {
   }
 
   @Test
+  fun `evicts the least recently used entry beyond the maximum`() {
+    val small = InMemorySearchCache(timeProvider = clock, maxEntries = 2)
+    small.put("a", tracks)
+    small.put("b", tracks)
+    small.get("a") // "b" is now the least recently used
+
+    small.put("c", tracks)
+
+    assertEquals(tracks, small.get("a"))
+    assertNull(small.get("b"))
+    assertEquals(tracks, small.get("c"))
+  }
+
+  @Test
+  fun `never holds more entries than the maximum`() {
+    val small = InMemorySearchCache(timeProvider = clock, maxEntries = 3)
+
+    (1..10).forEach { small.put("q$it", tracks) }
+
+    assertEquals(3, (1..10).count { small.get("q$it") != null })
+  }
+
+  @Test
+  fun `writing purges expired entries that were never read again`() {
+    val small = InMemorySearchCache(timeProvider = clock, maxEntries = 2)
+    small.put("expiring", tracks)
+    clock.advanceBy(100_000)
+    small.put("live", tracks)
+    small.get("expiring") // now "live" is the least recently used
+    clock.advanceBy(InMemorySearchCache.DEFAULT_TTL_MILLIS - 100_000)
+
+    // "expiring" is expired but never read again; the purge frees its slot so "live" survives.
+    small.put("new", tracks)
+
+    assertEquals(tracks, small.get("live"))
+    assertEquals(tracks, small.get("new"))
+  }
+
+  @Test
   fun `queries are cached independently`() {
     cache.put("queen", tracks)
 
