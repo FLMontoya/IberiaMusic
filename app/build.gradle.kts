@@ -58,6 +58,19 @@ dependencies {
   testImplementation(libs.androidx.compose.ui.test.junit4)
   debugImplementation(platform(libs.androidx.compose.bom))
   debugImplementation(libs.androidx.compose.ui.test.manifest)
+  // Espresso 3.7 needs a newer concurrent-futures than the app resolves on its own; AGP keeps both
+  // classpaths consistent.
+  debugImplementation(libs.androidx.concurrent.futures)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.junit)
+  androidTestImplementation(platform(libs.androidx.compose.bom))
+  androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+  androidTestImplementation(libs.androidx.compose.ui.test.junit4.accessibility)
+  androidTestImplementation(libs.mockk.android)
 }
+
+// The Accessibility Test Framework brings Guava, which already contains ListenableFuture. Its empty
+// "listenablefuture:9999.0" placeholder clashes with the 1.0 pinned by consistent resolution.
+configurations
+    .matching { it.name.contains("AndroidTest") }
+    .configureEach { exclude(group = "com.google.guava", module = "listenablefuture") }
