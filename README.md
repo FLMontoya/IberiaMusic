@@ -210,23 +210,6 @@ el teclado (`Tab`).
 | <img src="docs/screenshots/14-talkback-fila.png" width="240" alt="Foco de TalkBack sobre una fila completa"> | <img src="docs/screenshots/15-talkback-fila-siguiente.png" width="240" alt="Foco de TalkBack sobre la fila siguiente"> | <img src="docs/screenshots/16-talkback-detalle-volver.png" width="240" alt="Foco de TalkBack en el botón Volver del detalle"> |
 | Carátula, título y artista forman un único elemento. | El siguiente foco salta a la fila contigua. | Al abrir el detalle, el foco empieza en «Volver». |
 
-## Revisión en emulador: errores encontrados
-
-Detectado en el emulador y corregido:
-
-- El teclado tapaba el final de la lista de resultados (faltaba `imePadding`).
-
-Detectado al revisar el código y compararlo con otro proyecto de la misma prueba, y corregido con
-tests:
-
-- Durante el debounce podía seguir visible la lista de la búsqueda anterior junto al texto nuevo.
-- Las consultas "Queen" y "queen" no compartían caché.
-- Un doble toque sobre una fila podía apilar dos pantallas de detalle (`launchSingleTop`).
-- Los resultados repetidos de iTunes romperían la clave única de la lista.
-
-Sin problemas: la compilación `release` (con R8) arranca y busca bien en el emulador, y la rotación
-y el botón Atrás conservan la lista y el detalle.
-
 ## Flujo de trabajo
 
 Una rama por paso desde `develop`, commits pequeños con Conventional Commits y una PR a `develop`
