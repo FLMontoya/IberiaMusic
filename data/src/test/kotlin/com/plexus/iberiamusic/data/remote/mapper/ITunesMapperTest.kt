@@ -3,10 +3,10 @@ package com.plexus.iberiamusic.data.remote.mapper
 import com.plexus.iberiamusic.data.remote.dto.ITunesSearchResponseDto
 import com.plexus.iberiamusic.data.remote.dto.ITunesTrackDto
 import com.plexus.iberiamusic.domain.model.Track
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Test
 
 class ITunesMapperTest {
 
