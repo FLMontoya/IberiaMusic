@@ -134,7 +134,7 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 
 - Las carátulas se cargan con [Coil](https://coil-kt.github.io/coil/). La lista usa la miniatura de
   100 px y el detalle pide la de 600 px cambiando el tamaño en la URL de iTunes.
-- Diseño inspirado en Spotify: tema siempre oscuro (`#121212`) con acento verde, títulos en
+- Diseño oscuro: tema siempre oscuro (`#121212`) con acento verde, títulos en
   negrita, carátulas con esquinas de 4 dp y un buscador en forma de píldora blanca con lupa y un
   anillo verde al enfocarlo. Solo cambian el tema y los estilos; los contenedores de las pantallas
   son los mismos. La ventana y las barras del sistema también son oscuras. Se descartó el color
@@ -184,7 +184,7 @@ teclado reintenta la búsqueda al recuperar la conexión.
 ### Contraste
 
 Ratios de contraste de la paleta (fórmula WCAG; el mínimo para texto es 4,5:1 y para bordes e
-iconos, 3:1). Los comprueba `SpotifyPaletteTest`, así que un cambio de color que baje de ese mínimo
+iconos, 3:1). Los comprueba `IberiaPaletteTest`, así que un cambio de color que baje de ese mínimo
 rompe los tests.
 
 | Elemento | Texto | Fondo | Ratio |
