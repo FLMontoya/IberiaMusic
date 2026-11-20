@@ -238,6 +238,23 @@ class AccessibilityInstrumentedTest {
   }
 
   @Test
+  fun detailGroupsEveryFieldAndShowsADashForTheMissingOnes() {
+    val sparse = Track(id = 2L, name = "Heroes", artistName = "Bowie")
+    show(SearchResult.Success(listOf(sparse)))
+    searchFor("bowie", sparse.name)
+    rule.onNode(hasClickAction() and hasText(sparse.name)).performClick()
+    waitForText(string(R.string.detail_back))
+
+    val dash = string(R.string.detail_value_missing)
+    rule.onNode(hasText(string(R.string.detail_artist)) and hasText("Bowie")).assertExists()
+    rule.onNode(hasText(string(R.string.detail_album)) and hasText(dash)).assertExists()
+    rule.onNode(hasText(string(R.string.detail_genre)) and hasText(dash)).assertExists()
+    rule.onNode(hasText(string(R.string.detail_duration)) and hasText(dash)).assertExists()
+    rule.onNode(hasText(string(R.string.detail_release_date)) and hasText(dash)).assertExists()
+    rule.onRoot().tryPerformAccessibilityChecks()
+  }
+
+  @Test
   fun contentStaysReachableWithTheFontAt200Percent() {
     show(SearchResult.Success(listOf(track)), fontScale = 2f)
 
