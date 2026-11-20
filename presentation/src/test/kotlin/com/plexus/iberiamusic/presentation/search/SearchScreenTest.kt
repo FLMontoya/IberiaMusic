@@ -10,14 +10,18 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTouchHeightIsEqualTo
+import androidx.compose.ui.test.assertTouchWidthIsEqualTo
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasImeAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Density
@@ -46,6 +50,7 @@ class SearchScreenTest {
       query: String = "",
       fontScale: Float? = null,
       onQueryChange: (String) -> Unit = {},
+      onSearch: () -> Unit = {},
       onTrackClick: (Track) -> Unit = {},
   ) {
     rule.setContent {
@@ -57,6 +62,7 @@ class SearchScreenTest {
               query = query,
               uiState = state,
               onQueryChange = onQueryChange,
+              onSearch = onSearch,
               onTrackClick = onTrackClick,
           )
         }
@@ -95,6 +101,36 @@ class SearchScreenTest {
   }
 
   @Test
+  fun `the keyboard search action reports a search`() {
+    var searches = 0
+    show(query = "queen", onSearch = { searches++ })
+
+    rule.onNode(hasSetTextAction()).performImeAction()
+
+    assertEquals(1, searches)
+  }
+
+  @Test
+  fun `there is no clear button while the query is empty`() {
+    show(query = "")
+
+    rule.onNode(hasContentDescription(string(R.string.search_clear))).assertDoesNotExist()
+  }
+
+  @Test
+  fun `clear button empties the query and meets the minimum touch target`() {
+    var received: String? = null
+    show(query = "queen", onQueryChange = { received = it })
+
+    val clear =
+        rule.onNode(hasClickAction() and hasContentDescription(string(R.string.search_clear)))
+    clear.assertTouchHeightIsEqualTo(48.dp).assertTouchWidthIsEqualTo(48.dp)
+    clear.performClick()
+
+    assertEquals("", received)
+  }
+
+  @Test
   fun `idle state shows the hint`() {
     show(SearchUiState.Idle)
 
@@ -112,10 +148,10 @@ class SearchScreenTest {
 
   @Test
   fun `empty state is announced politely`() {
-    show(SearchUiState.Empty)
+    show(SearchUiState.Empty, query = "zzzz")
 
     rule
-        .onNodeWithText(string(R.string.search_empty))
+        .onNodeWithText(string(R.string.search_empty, "zzzz"))
         .assert(SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Polite))
   }
 
@@ -142,6 +178,17 @@ class SearchScreenTest {
         )
         .assertExists()
     rule.onAllNodes(hasClickAction() and hasText("Bohemian Rhapsody")).assertCountEquals(1)
+  }
+
+  @Test
+  fun `artwork is decorative so the row has no content description of its own`() {
+    val withArtwork = track.copy(artworkUrl = "https://example.com/100x100bb.jpg")
+    show(SearchUiState.Content(listOf(withArtwork)))
+
+    rule.onAllNodes(hasClickAction() and hasText("Bohemian Rhapsody")).assertCountEquals(1)
+    rule
+        .onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription))
+        .assertCountEquals(0)
   }
 
   @Test

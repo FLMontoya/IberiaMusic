@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -90,6 +91,32 @@ class DetailScreenTest {
     rule.onNodeWithText(string(R.string.detail_genre)).assertDoesNotExist()
     rule.onNodeWithText(string(R.string.detail_duration)).assertDoesNotExist()
     rule.onNodeWithText(string(R.string.detail_release_date)).assertDoesNotExist()
+  }
+
+  @Test
+  fun `artwork is described with the track name`() {
+    show(fullTrack.copy(artworkUrl = "https://example.com/100x100bb.jpg"))
+
+    rule
+        .onNode(
+            hasContentDescription(
+                rule.activity.getString(R.string.detail_artwork, "Bohemian Rhapsody"),
+            ),
+        )
+        .assertExists()
+  }
+
+  @Test
+  fun `no artwork element when the track has no artwork`() {
+    show(fullTrack)
+
+    rule
+        .onNode(
+            hasContentDescription(
+                rule.activity.getString(R.string.detail_artwork, "Bohemian Rhapsody"),
+            ),
+        )
+        .assertDoesNotExist()
   }
 
   @Test
