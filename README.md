@@ -1,6 +1,40 @@
 # IberiaMusic
 
+[![CI](https://github.com/FLMontoya/IberiaMusic/actions/workflows/ci.yml/badge.svg)](https://github.com/FLMontoya/IberiaMusic/actions/workflows/ci.yml)
+![Kotlin 2.3.21](https://img.shields.io/badge/Kotlin-2.3.21-7F52FF?logo=kotlin&logoColor=white)
+![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)
+![minSdk 26](https://img.shields.io/badge/minSdk-26-3DDC84?logo=android&logoColor=white)
+![Formato ktfmt](https://img.shields.io/badge/formato-ktfmt-blue)
+
 App Android de búsqueda de música con pantalla de detalle, hecha con Kotlin y Jetpack Compose.
+
+## Características
+
+- Búsqueda de canciones con debounce de 300 ms; una búsqueda nueva cancela la anterior.
+- Caché en memoria por query con TTL de 3 minutos y reloj inyectable.
+- Pantalla de detalle con carátula y los campos que devuelve iTunes.
+- Estados de carga, vacío y error, con accesibilidad cuidada (TalkBack, fuente al 200 %, contraste y
+  teclado).
+- Arquitectura en cuatro módulos (`app`, `presentation`, `domain`, `data`) con inyección manual,
+  sin Hilt.
+
+## Tecnologías
+
+| Área | Tecnología | Versión |
+|---|---|---|
+| Lenguaje | Kotlin | 2.3.21 |
+| Build | Android Gradle Plugin | 9.5.1 |
+| UI | Jetpack Compose (BOM) y Material 3 | 2026.09.00 |
+| Navegación | Navigation Compose | 2.10.2 |
+| Asincronía | Coroutines y `StateFlow` | 1.11.0 |
+| Red | Retrofit y OkHttp | 3.0.0 y 5.5.1 |
+| Serialización | kotlinx.serialization | 1.13.0 |
+| Imágenes | Coil | 3.6.3 |
+| Formato | ktfmt (`com.ncorti.ktfmt.gradle`) | 0.28.0 |
+| Tests | JUnit 4, coroutines-test, MockWebServer y Robolectric | 4.13.2, 1.11.0, 5.5.1 y 4.18.1 |
+
+Android: `minSdk` 26, `targetSdk` y `compileSdk` 37. Las versiones están centralizadas en
+`gradle/libs.versions.toml`.
 
 ## API elegida
 
@@ -21,6 +55,14 @@ Requisitos: Android Studio reciente (o JDK 25 para la línea de comandos) y cone
 ```
 
 En Windows usa `gradlew.bat` en lugar de `./gradlew`.
+
+Pasos desde cero:
+
+1. Clona el repositorio: `git clone https://github.com/FLMontoya/IberiaMusic.git`.
+2. Ábrelo en Android Studio y deja que sincronice Gradle, o usa la línea de comandos.
+3. Arranca un emulador (API 26 o superior) o conecta un dispositivo y ejecuta `installDebug`.
+
+El Gradle daemon pide JDK 25 (`gradle/gradle-daemon-jvm.properties`), que el CI también usa.
 
 ## Arquitectura
 
@@ -189,3 +231,10 @@ y el botón Atrás conservan la lista y el detalle.
 
 Una rama por paso desde `develop`, commits pequeños con Conventional Commits y una PR a `develop`
 por rama. El CI ejecuta `ktfmtCheck` y `test` en cada PR hacia `develop`.
+
+Las PR usan la plantilla `.github/pull_request_template.md`, que incluye una lista de comprobación
+de tests y de accesibilidad.
+
+## Licencia
+
+El repositorio no incluye un archivo de licencia.
