@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Capa monocroma para iconos temáticos (Android 13+): solo la corchea. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38.5,67a8.5,6 0,1 0,17 0a8.5,6 0,1 0,-17 0zM53.5,36h3v31h-3zM56.5,36C62,38 70,42 69,51C68.5,55 66,58 63,60C64.5,55 63,50 56.5,47z" />
+</vector>
