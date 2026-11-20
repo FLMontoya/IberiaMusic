@@ -1,14 +1,14 @@
 package com.plexus.iberiamusic.data.remote
 
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import okhttp3.MediaType.Companion.toMediaType
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
@@ -18,7 +18,7 @@ class ITunesApiTest {
   private val server = MockWebServer()
   private lateinit var api: ITunesApi
 
-  @BeforeTest
+  @Before
   fun setUp() {
     server.start()
     api =
@@ -32,7 +32,7 @@ class ITunesApiTest {
             .create(ITunesApi::class.java)
   }
 
-  @AfterTest
+  @After
   fun tearDown() {
     server.close()
   }

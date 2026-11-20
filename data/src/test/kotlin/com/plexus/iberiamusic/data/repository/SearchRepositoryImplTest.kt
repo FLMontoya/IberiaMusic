@@ -13,11 +13,11 @@ import io.mockk.every
 import io.mockk.mockk
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
+import org.junit.Test
 
 class SearchRepositoryImplTest {
 
