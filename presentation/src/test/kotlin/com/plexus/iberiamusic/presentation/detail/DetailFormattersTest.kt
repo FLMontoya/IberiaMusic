@@ -1,7 +1,7 @@
 package com.plexus.iberiamusic.presentation.detail
 
 import java.util.Locale
-import org.junit.Assert.assertEquals
+import kotlin.test.assertEquals
 import org.junit.Test
 
 class DetailFormattersTest {

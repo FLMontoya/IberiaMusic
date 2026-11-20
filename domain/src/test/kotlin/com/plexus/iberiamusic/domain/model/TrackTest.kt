@@ -1,7 +1,7 @@
 package com.plexus.iberiamusic.domain.model
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import org.junit.Test
 
 class TrackTest {

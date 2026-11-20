@@ -3,6 +3,7 @@ agp = "9.5.1"
 coreKtx = "1.10.1"
 junit = "4.13.2"
 mockk = "1.14.12"
+turbine = "1.2.1"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 kotlin = "2.3.21"
@@ -45,6 +46,8 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 androidx-lifecycle-viewmodel ={ group = "androidx.lifecycle", name = "lifecycle-viewmodel", version.ref = "lifecycle" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

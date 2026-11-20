@@ -1,83 +1,80 @@
 package com.plexus.iberiamusic.data.cache
 
-import com.plexus.iberiamusic.data.time.FakeTimeProvider
 import com.plexus.iberiamusic.data.time.TimeProvider
 import com.plexus.iberiamusic.domain.model.Track
 import io.mockk.every
 import io.mockk.mockk
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import org.junit.Test
 
 class InMemorySearchCacheTest {
 
-  private val clock = FakeTimeProvider()
-  private var mockNow = 0L
-  private val mockClock = mockk<TimeProvider> { every { nowMillis() } answers { mockNow } }
+  private var now = 0L
+  private val clock: TimeProvider = mockk { every { nowMillis() } answers { now } }
   private val cache = InMemorySearchCache(timeProvider = clock)
   private val tracks = listOf(Track(id = 1L, name = "Song", artistName = "Artist"))
 
   @Test
-  fun `miss returns null for an unknown query`() {
+  fun `GIVEN an unknown query WHEN get THEN returns null`() {
     assertNull(cache.get("queen"))
   }
 
   @Test
-  fun `hit returns the stored tracks`() {
+  fun `GIVEN a stored query WHEN get THEN returns the stored tracks`() {
     cache.put("queen", tracks)
 
     assertEquals(tracks, cache.get("queen"))
   }
 
   @Test
-  fun `entry is still valid just before the TTL elapses`() {
+  fun `GIVEN a stored query WHEN just before the TTL elapses THEN it is still valid`() {
     cache.put("queen", tracks)
 
-    clock.advanceBy(InMemorySearchCache.DEFAULT_TTL_MILLIS - 1)
+    now += InMemorySearchCache.DEFAULT_TTL_MILLIS - 1
 
     assertEquals(tracks, cache.get("queen"))
   }
 
   @Test
-  fun `entry expires once the TTL elapses`() {
+  fun `GIVEN a stored query WHEN the TTL elapses THEN it expires`() {
     cache.put("queen", tracks)
 
-    clock.advanceBy(InMemorySearchCache.DEFAULT_TTL_MILLIS)
+    now += InMemorySearchCache.DEFAULT_TTL_MILLIS
 
     assertNull(cache.get("queen"))
   }
 
   @Test
-  fun `default TTL is three minutes`() {
+  fun `GIVEN the default configuration THEN the TTL is three minutes`() {
     assertEquals(3 * 60 * 1000L, InMemorySearchCache.DEFAULT_TTL_MILLIS)
   }
 
   @Test
-  fun `putting again after expiry stores fresh data with a new TTL`() {
+  fun `GIVEN an expired entry WHEN put again THEN stores fresh data with a new TTL`() {
     cache.put("queen", tracks)
-    clock.advanceBy(InMemorySearchCache.DEFAULT_TTL_MILLIS)
+    now += InMemorySearchCache.DEFAULT_TTL_MILLIS
     val fresh = listOf(Track(id = 2L, name = "Other", artistName = "Artist"))
 
     cache.put("queen", fresh)
-    clock.advanceBy(InMemorySearchCache.DEFAULT_TTL_MILLIS - 1)
+    now += InMemorySearchCache.DEFAULT_TTL_MILLIS - 1
 
     assertEquals(fresh, cache.get("queen"))
   }
 
   @Test
-  fun `entry is not served when the clock goes backwards`() {
-    val backwards = InMemorySearchCache(timeProvider = mockClock)
-    mockNow += 10_000
-    backwards.put("queen", tracks)
+  fun `GIVEN a clock that goes backwards WHEN get THEN the entry is not served`() {
+    now += 10_000
+    cache.put("queen", tracks)
 
-    mockNow -= 5_000
+    now -= 5_000
 
-    assertNull(backwards.get("queen"))
+    assertNull(cache.get("queen"))
   }
 
   @Test
-  fun `evicts the least recently used entry beyond the maximum`() {
-    val small = InMemorySearchCache(timeProvider = mockClock, maxEntries = 2)
+  fun `GIVEN a full cache WHEN put THEN evicts the least recently used entry`() {
+    val small = InMemorySearchCache(timeProvider = clock, maxEntries = 2)
     small.put("a", tracks)
     small.put("b", tracks)
     small.get("a") // "b" is now the least recently used
@@ -90,8 +87,8 @@ class InMemorySearchCacheTest {
   }
 
   @Test
-  fun `never holds more entries than the maximum`() {
-    val small = InMemorySearchCache(timeProvider = mockClock, maxEntries = 3)
+  fun `GIVEN many puts THEN never holds more entries than the maximum`() {
+    val small = InMemorySearchCache(timeProvider = clock, maxEntries = 3)
 
     (1..10).forEach { small.put("q$it", tracks) }
 
@@ -99,13 +96,13 @@ class InMemorySearchCacheTest {
   }
 
   @Test
-  fun `writing purges expired entries that were never read again`() {
-    val small = InMemorySearchCache(timeProvider = mockClock, maxEntries = 2)
+  fun `GIVEN an expired entry never read again WHEN put THEN the purge frees its slot`() {
+    val small = InMemorySearchCache(timeProvider = clock, maxEntries = 2)
     small.put("expiring", tracks)
-    mockNow += 100_000
+    now += 100_000
     small.put("live", tracks)
     small.get("expiring") // now "live" is the least recently used
-    mockNow += InMemorySearchCache.DEFAULT_TTL_MILLIS - 100_000
+    now += InMemorySearchCache.DEFAULT_TTL_MILLIS - 100_000
 
     // "expiring" is expired but never read again; the purge frees its slot so "live" survives.
     small.put("new", tracks)
@@ -115,7 +112,7 @@ class InMemorySearchCacheTest {
   }
 
   @Test
-  fun `queries are cached independently`() {
+  fun `GIVEN two queries THEN they are cached independently`() {
     cache.put("queen", tracks)
 
     assertNull(cache.get("bowie"))

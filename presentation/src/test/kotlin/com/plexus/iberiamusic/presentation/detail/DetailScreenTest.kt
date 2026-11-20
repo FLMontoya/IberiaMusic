@@ -20,7 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
-import org.junit.Assert.assertEquals
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -135,12 +136,12 @@ class DetailScreenTest {
 
   @Test
   fun `back button reports the click`() {
-    var backs = 0
-    show(fullTrack, onBack = { backs++ })
+    val onBack = mockk<() -> Unit>(relaxed = true)
+    show(fullTrack, onBack = onBack)
 
     rule.onNode(hasClickAction() and hasText(string(R.string.detail_back))).performClick()
 
-    assertEquals(1, backs)
+    verify(exactly = 1) { onBack() }
   }
 
   @Test
