@@ -2,6 +2,7 @@
 agp = "9.5.1"
 coreKtx = "1.10.1"
 junit = "4.13.2"
+mockk = "1.14.12"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 kotlin = "2.3.21"
@@ -20,6 +21,7 @@ coil = "3.6.3"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
