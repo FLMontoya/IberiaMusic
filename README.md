@@ -92,6 +92,10 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 
 - Las carátulas se cargan con [Coil](https://coil-kt.github.io/coil/). La lista usa la miniatura de
   100 px y el detalle pide la de 600 px cambiando el tamaño en la URL de iTunes.
+- Siguiendo las guías de Material 3: color dinámico (según el fondo de pantalla) en Android 12 o
+  posterior, con la paleta estática como respaldo; ancho máximo de contenido de 840 dp en pantallas
+  grandes; y *back* predictivo activado en el manifiesto. Los ratios de contraste de abajo son los de
+  la paleta estática: con color dinámico dependen del fondo de pantalla.
 - El `NavHost` aplica `imePadding`, para que el teclado no tape el final de la lista, y navega con
   `launchSingleTop`, para que un doble toque no apile dos detalles.
 - La canción elegida se guarda con `rememberSaveable`, así que el detalle se restaura tras la
