@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -164,6 +166,44 @@ class SearchScreenTest {
         .assert(
             SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Assertive),
         )
+  }
+
+  @Test
+  fun `retry button is shown in the error state`() {
+    show(SearchUiState.Error)
+
+    rule.onNode(hasClickAction() and hasText(string(R.string.search_retry))).assertIsDisplayed()
+  }
+
+  @Test
+  fun `no retry button outside the error state`() {
+    show(SearchUiState.Idle)
+
+    rule.onNode(hasText(string(R.string.search_retry))).assertDoesNotExist()
+  }
+
+  @Test
+  fun `retry button reports a search and meets the minimum touch target`() {
+    val onSearch = mockk<() -> Unit>(relaxed = true)
+    show(SearchUiState.Error, query = "queen", onSearch = onSearch)
+
+    val retry = rule.onNode(hasClickAction() and hasText(string(R.string.search_retry)))
+    retry.assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp)
+    retry.performClick()
+
+    verify(exactly = 1) { onSearch() }
+  }
+
+  @Test
+  fun `error message stays an assertive live region next to the retry button`() {
+    show(SearchUiState.Error)
+
+    rule
+        .onNodeWithText(string(R.string.search_error))
+        .assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Assertive),
+        )
+    rule.onNode(hasText(string(R.string.search_retry))).assertIsDisplayed()
   }
 
   @Test

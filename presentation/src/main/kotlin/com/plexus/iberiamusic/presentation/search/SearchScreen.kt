@@ -28,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -128,7 +129,7 @@ fun SearchScreen(
             Modifier.fillMaxWidth().border(if (focused) 3.dp else 0.dp, SpotifyGreen, CircleShape),
     )
     Spacer(Modifier.size(8.dp))
-    SearchBody(uiState = uiState, query = query, onTrackClick = onTrackClick)
+    SearchBody(uiState = uiState, query = query, onTrackClick = onTrackClick, onRetry = onSearch)
   }
 }
 
@@ -152,7 +153,12 @@ private fun searchFieldColors() =
     )
 
 @Composable
-private fun SearchBody(uiState: SearchUiState, query: String, onTrackClick: (Track) -> Unit) {
+private fun SearchBody(
+    uiState: SearchUiState,
+    query: String,
+    onTrackClick: (Track) -> Unit,
+    onRetry: () -> Unit,
+) {
   when (uiState) {
     SearchUiState.Idle -> StatusMessage(stringResource(R.string.search_idle_hint))
     SearchUiState.Loading -> LoadingMessage()
@@ -161,13 +167,16 @@ private fun SearchBody(uiState: SearchUiState, query: String, onTrackClick: (Tra
             stringResource(R.string.search_empty, query.trim()),
             LiveRegionMode.Polite,
         )
-    SearchUiState.Error ->
-        StatusMessage(
-            text = stringResource(R.string.search_error),
-            liveRegionMode = LiveRegionMode.Assertive,
-            color = MaterialTheme.colorScheme.error,
-            icon = Icons.Filled.Warning,
-        )
+    SearchUiState.Error -> {
+      StatusMessage(
+          text = stringResource(R.string.search_error),
+          liveRegionMode = LiveRegionMode.Assertive,
+          color = MaterialTheme.colorScheme.error,
+          icon = Icons.Filled.Warning,
+      )
+      // TextButton already guarantees a 48dp x 48dp touch target.
+      TextButton(onClick = onRetry) { Text(stringResource(R.string.search_retry)) }
+    }
     is SearchUiState.Content ->
         LazyColumn(modifier = Modifier.fillMaxSize()) {
           items(uiState.tracks, key = { it.id }) { track ->
