@@ -1,8 +1,8 @@
 package com.plexus.iberiamusic.domain.model
 
-import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import org.junit.Test
 
 class TrackTest {
 
