@@ -16,4 +16,5 @@
     <string name="detail_genre">Género</string>
     <string name="detail_duration">Duración</string>
     <string name="detail_release_date">Fecha de lanzamiento</string>
+    <string name="detail_value_missing">-</string>
 </resources>
