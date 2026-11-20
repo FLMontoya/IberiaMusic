@@ -10,7 +10,9 @@ import com.plexus.iberiamusic.domain.model.SearchResult
 import com.plexus.iberiamusic.domain.repository.SearchRepository
 import com.plexus.iberiamusic.domain.usecase.SearchTracksUseCase
 import com.plexus.iberiamusic.presentation.search.SearchViewModel
-import org.junit.Assert.assertTrue
+import io.mockk.coEvery
+import io.mockk.mockk
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,15 +27,13 @@ class IberiaMusicAppWideScreenTest {
 
   @Test
   fun `content keeps a readable width and stays centered on wide screens`() {
-    val repository =
-        object : SearchRepository {
-          override suspend fun search(query: String): SearchResult = SearchResult.Empty
-        }
+    val repository: SearchRepository = mockk()
+    coEvery { repository.search(any()) } returns SearchResult.Empty
     rule.setContent { IberiaMusicApp(SearchViewModel(SearchTracksUseCase(repository))) }
 
     val bounds = rule.onNode(hasSetTextAction()).getUnclippedBoundsInRoot()
 
-    assertTrue("field is ${bounds.width} wide", bounds.width <= 840.dp)
-    assertTrue("field starts at ${bounds.left}", bounds.left > 100.dp)
+    assertTrue(bounds.width <= 840.dp, "field is ${bounds.width} wide")
+    assertTrue(bounds.left > 100.dp, "field starts at ${bounds.left}")
   }
 }

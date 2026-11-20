@@ -15,6 +15,8 @@ import com.plexus.iberiamusic.domain.repository.SearchRepository
 import com.plexus.iberiamusic.domain.usecase.SearchTracksUseCase
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.search.SearchViewModel
+import io.mockk.coEvery
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -56,11 +58,8 @@ class IberiaMusicAppTest {
   }
 
   private fun showApp() {
-    val repository =
-        object : SearchRepository {
-          override suspend fun search(query: String): SearchResult =
-              SearchResult.Success(listOf(track))
-        }
+    val repository: SearchRepository = mockk()
+    coEvery { repository.search(any()) } returns SearchResult.Success(listOf(track))
     val viewModel = SearchViewModel(SearchTracksUseCase(repository))
     rule.setContent { IberiaMusicApp(searchViewModel = viewModel) }
     settle()
