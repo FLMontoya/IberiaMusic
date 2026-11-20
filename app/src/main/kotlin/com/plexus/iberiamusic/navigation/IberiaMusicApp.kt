@@ -1,5 +1,7 @@
 package com.plexus.iberiamusic.navigation
 
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -32,14 +34,15 @@ fun IberiaMusicApp(searchViewModel: SearchViewModel) {
       NavHost(
           navController = navController,
           startDestination = SEARCH_ROUTE,
-          modifier = Modifier.padding(innerPadding),
+          modifier = Modifier.padding(innerPadding).consumeWindowInsets(innerPadding).imePadding(),
       ) {
         composable(SEARCH_ROUTE) {
           SearchRoute(
               viewModel = searchViewModel,
               onTrackClick = { track ->
                 selectedTrack = track
-                navController.navigate(DETAIL_ROUTE)
+                // singleTop: a double tap must not stack two detail screens.
+                navController.navigate(DETAIL_ROUTE) { launchSingleTop = true }
               },
           )
         }
