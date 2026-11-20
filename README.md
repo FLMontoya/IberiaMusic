@@ -45,7 +45,13 @@ lanzamiento, junto con la carátula; los campos que iTunes no devuelve se muestr
 
 ## Cómo ejecutar
 
-Requisitos: Android Studio reciente (o JDK 25 para la línea de comandos) y conexión a internet.
+### Requisitos previos
+
+- Android Studio reciente, o JDK 25 para la línea de comandos.
+- Un emulador o dispositivo con Android 8.0 (API 26) o superior.
+- Conexión a internet: la app consulta la API de iTunes en tiempo real.
+
+### Instalación
 
 ```bash
 ./gradlew assembleDebug        # compila la app
@@ -64,6 +70,14 @@ Pasos desde cero:
 3. Arranca un emulador (API 26 o superior) o conecta un dispositivo y ejecuta `installDebug`.
 
 El Gradle daemon pide JDK 25 (`gradle/gradle-daemon-jvm.properties`), que el CI también usa.
+
+### Uso
+
+1. Escribe en el campo de búsqueda: los resultados aparecen solos tras una breve pausa, o al pulsar la
+   tecla de búsqueda del teclado.
+2. Toca una canción para ver su detalle (carátula, artista, álbum, género, duración y fecha).
+3. Si la búsqueda falla, pulsa «Reintentar» o la tecla de búsqueda.
+4. Vuelve con el botón «Volver» o con el gesto de atrás.
 
 ## Arquitectura
 
@@ -130,8 +144,9 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 - Estados de carga, vacío y error anunciados con `liveRegion`.
 - Campo de búsqueda con `label` visible y `ImeAction.Search`.
 - Todos los textos en `strings.xml`.
-- Verificado en un emulador (Pixel 6, API 37): tamaño de fuente al 200 %, tema oscuro,
-  TalkBack y navegación por teclado (ver [Capturas](#capturas)).
+- Verificado en un emulador (Pixel 6, API 37): tamaño de fuente al 200 %, TalkBack y los chequeos
+  automáticos de accesibilidad de los tests de instrumentación (ver [Tests](#tests) y
+  [Capturas](#capturas)).
 - No verificado: que TalkBack anuncie en voz alta los cambios de estado (`liveRegion`; una captura
   solo muestra el foco), el Accessibility Scanner, ni el foco de TalkBack sobre la carátula y los
   campos del detalle (el teclado solo enfoca elementos con acción).
@@ -184,10 +199,10 @@ Tomadas en un emulador Pixel 6 (API 37, en español) con la app y la API reales 
 
 | 4. Sin resultados | 5. Sin conexión |
 |---|---|
-| <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje de error en rosa claro con icono de aviso"> |
+| <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje de error en rosa con icono de aviso y botón «Reintentar»"> |
 
 El mensaje de vacío cita lo buscado. El de error lleva icono y texto, y se reintenta con el botón
-«Reintentar» (área táctil de 48 dp) o con la tecla de búsqueda del teclado al recuperar la conexión.
+«Reintentar» (área táctil de 48 dp) o con la tecla de búsqueda del teclado.
 
 ### Fuente al 200 %
 
@@ -215,19 +230,16 @@ rompe los tests.
 
 ### TalkBack
 
-Con TalkBack activado; el recuadro verde es su foco, es decir, lo que leería. Para moverse se usó
-el teclado (`Tab`). Estas capturas se tomaron con el diseño anterior (tema claro): el orden de foco
-y la semántica no han cambiado, pero no se han repetido con el diseño nuevo.
+Con TalkBack activado; el recuadro verde es su foco, es decir, lo que leería.
 
-| 9. Título | 10. Campo | 11. Borrar |
+| 9. Título | 10. Campo | 11. Detalle |
 |---|---|---|
-| <img src="docs/screenshots/11-talkback-titulo.png" width="240" alt="Foco de TalkBack en el título «Buscar música»"> | <img src="docs/screenshots/12-talkback-campo.png" width="240" alt="Foco de TalkBack en el campo de búsqueda con su etiqueta"> | <img src="docs/screenshots/13-talkback-borrar.png" width="240" alt="Foco de TalkBack en el botón de borrar la búsqueda"> |
-| Encabezado (`heading()`). | Etiqueta visible; el teclado muestra la tecla de búsqueda. | Botón de 48 dp con descripción. |
+| <img src="docs/screenshots/09-talkback-titulo.png" width="240" alt="Foco de TalkBack en el título «Buscar música»"> | <img src="docs/screenshots/10-talkback-campo.png" width="240" alt="Foco de TalkBack en el campo de búsqueda con su etiqueta"> | <img src="docs/screenshots/11-talkback-detalle-volver.png" width="240" alt="Foco de TalkBack en el botón Volver del detalle"> |
+| Encabezado (`heading()`). | Etiqueta visible; el teclado muestra la tecla de búsqueda. | Al abrir el detalle, el foco empieza en «Volver». |
 
-| 12. Fila | 13. Fila siguiente | 14. Detalle |
-|---|---|---|
-| <img src="docs/screenshots/14-talkback-fila.png" width="240" alt="Foco de TalkBack sobre una fila completa"> | <img src="docs/screenshots/15-talkback-fila-siguiente.png" width="240" alt="Foco de TalkBack sobre la fila siguiente"> | <img src="docs/screenshots/16-talkback-detalle-volver.png" width="240" alt="Foco de TalkBack en el botón Volver del detalle"> |
-| Carátula, título y artista forman un único elemento. | El siguiente foco salta a la fila contigua. | Al abrir el detalle, el foco empieza en «Volver». |
+No hay capturas del foco sobre cada fila ni sobre el botón de borrar: en el emulador usado, TalkBack
+no permitió moverse entre elementos de forma fiable. Esa semántica (cada fila y cada campo como un
+único elemento, el botón de borrar con descripción) la comprueban los tests de accesibilidad.
 
 ## Flujo de trabajo
 
