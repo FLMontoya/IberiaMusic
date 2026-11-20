@@ -134,10 +134,13 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 
 - Las carátulas se cargan con [Coil](https://coil-kt.github.io/coil/). La lista usa la miniatura de
   100 px y el detalle pide la de 600 px cambiando el tamaño en la URL de iTunes.
-- Siguiendo las guías de Material 3: color dinámico (según el fondo de pantalla) en Android 12 o
-  posterior, con la paleta estática como respaldo; ancho máximo de contenido de 840 dp en pantallas
-  grandes; y *back* predictivo activado en el manifiesto. Los ratios de contraste de abajo son los de
-  la paleta estática: con color dinámico dependen del fondo de pantalla.
+- Diseño inspirado en Spotify: tema siempre oscuro (`#121212`) con acento verde, títulos en
+  negrita, carátulas con esquinas de 4 dp y un buscador en forma de píldora blanca con lupa y un
+  anillo verde al enfocarlo. Solo cambian el tema y los estilos; los contenedores de las pantallas
+  son los mismos. La ventana y las barras del sistema también son oscuras. Se descartó el color
+  dinámico porque dependería del fondo de pantalla y no garantizaría el contraste.
+- Ancho máximo de contenido de 840 dp en pantallas grandes y *back* predictivo activado en el
+  manifiesto.
 - El `NavHost` aplica `imePadding`, para que el teclado no tape el final de la lista, y navega con
   `launchSingleTop`, para que un doble toque no apile dos detalles.
 - La canción elegida se guarda con `rememberSaveable`, así que el detalle se restaura tras la
@@ -161,51 +164,53 @@ Tomadas en un emulador Pixel 6 (API 37, en español) con la app y la API reales 
 
 | 1. Inicio | 2. Resultados | 3. Detalle |
 |---|---|---|
-| <img src="docs/screenshots/01-inicial.png" width="240" alt="Pantalla de búsqueda vacía con el mensaje «Escribe para empezar a buscar»"> | <img src="docs/screenshots/02-resultados.png" width="240" alt="Lista de resultados para «queen» con carátula, título y artista"> | <img src="docs/screenshots/03-detalle.png" width="240" alt="Detalle de Bohemian Rhapsody con carátula y cinco campos"> |
+| <img src="docs/screenshots/01-inicial.png" width="240" alt="Pantalla de búsqueda vacía con el mensaje «Escribe para empezar a buscar»"> | <img src="docs/screenshots/02-resultados.png" width="240" alt="Lista de resultados para «queen» con carátula, título y artista"> | <img src="docs/screenshots/03-detalle.png" width="240" alt="Detalle de We Will Rock You con carátula grande y cinco campos"> |
 
 ### Estados vacío y error
 
 | 4. Sin resultados | 5. Sin conexión |
 |---|---|
-| <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje de error en rojo con icono de aviso"> |
+| <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje de error en rosa claro con icono de aviso"> |
 
 El mensaje de vacío cita lo buscado. El de error lleva icono y texto, y la tecla de búsqueda del
 teclado reintenta la búsqueda al recuperar la conexión.
 
-### Fuente al 200 % y tema oscuro
+### Fuente al 200 %
 
 | 6. Lista al 200 % | 7. Detalle al 200 % | 8. Detalle al 200 % (scroll) |
 |---|---|---|
 | <img src="docs/screenshots/06-fuente200-lista.png" width="240" alt="Lista con la fuente al 200 %"> | <img src="docs/screenshots/07-fuente200-detalle.png" width="240" alt="Detalle con la fuente al 200 %"> | <img src="docs/screenshots/08-fuente200-detalle-scroll.png" width="240" alt="Detalle al 200 % desplazado hasta el último campo"> |
 
-| 9. Lista (oscuro) | 10. Detalle (oscuro) |
-|---|---|
-| <img src="docs/screenshots/09-oscuro-lista.png" width="240" alt="Lista en tema oscuro"> | <img src="docs/screenshots/10-oscuro-detalle.png" width="240" alt="Detalle en tema oscuro"> |
+### Contraste
 
-Ratios de contraste medidos sobre los píxeles de las capturas (fórmula WCAG; el mínimo para texto
-es 4,5:1):
+Ratios de contraste de la paleta (fórmula WCAG; el mínimo para texto es 4,5:1 y para bordes e
+iconos, 3:1). Los comprueba `SpotifyPaletteTest`, así que un cambio de color que baje de ese mínimo
+rompe los tests.
 
-| Elemento | Tema | Texto | Fondo | Ratio |
-|---|---|---|---|---|
-| Título de la fila | Claro | `#1D1B20` | `#FEF7FF` | 16,2:1 |
-| Subtítulo y etiqueta de campo | Claro | `#49454F` | `#FEF7FF` | 8,9:1 |
-| Mensaje de error | Claro | `#B3261E` | `#FEF7FF` | 6,2:1 |
-| Título de la fila | Oscuro | `#E6E0E9` | `#141218` | 14,3:1 |
-| Subtítulo y etiqueta de campo | Oscuro | `#CAC4D0` | `#141218` | 10,9:1 |
-
-El mensaje de error en el tema oscuro no se midió.
+| Elemento | Texto | Fondo | Ratio |
+|---|---|---|---|
+| Títulos | `#FFFFFF` | `#121212` | 18,7:1 |
+| Subtítulos y etiquetas de campo | `#B3B3B3` | `#121212` | 8,9:1 |
+| Subtítulos sobre superficie elevada | `#B3B3B3` | `#282828` | 7,0:1 |
+| Acento verde («Volver») | `#1DB954` | `#121212` | 7,2:1 |
+| Mensaje de error | `#F3727F` | `#121212` | 6,7:1 |
+| Texto sobre el acento verde | `#000000` | `#1DB954` | 8,1:1 |
+| Texto del buscador | `#000000` | `#FFFFFF` | 21,0:1 |
+| Etiqueta del buscador | `#535353` | `#FFFFFF` | 7,7:1 |
+| Borde y separadores | `#727272` | `#121212` | 3,9:1 |
 
 ### TalkBack
 
 Con TalkBack activado; el recuadro verde es su foco, es decir, lo que leería. Para moverse se usó
-el teclado (`Tab`).
+el teclado (`Tab`). Estas capturas se tomaron con el diseño anterior (tema claro): el orden de foco
+y la semántica no han cambiado, pero no se han repetido con el diseño nuevo.
 
-| 11. Título | 12. Campo | 13. Borrar |
+| 9. Título | 10. Campo | 11. Borrar |
 |---|---|---|
 | <img src="docs/screenshots/11-talkback-titulo.png" width="240" alt="Foco de TalkBack en el título «Buscar música»"> | <img src="docs/screenshots/12-talkback-campo.png" width="240" alt="Foco de TalkBack en el campo de búsqueda con su etiqueta"> | <img src="docs/screenshots/13-talkback-borrar.png" width="240" alt="Foco de TalkBack en el botón de borrar la búsqueda"> |
 | Encabezado (`heading()`). | Etiqueta visible; el teclado muestra la tecla de búsqueda. | Botón de 48 dp con descripción. |
 
-| 14. Fila | 15. Fila siguiente | 16. Detalle |
+| 12. Fila | 13. Fila siguiente | 14. Detalle |
 |---|---|---|
 | <img src="docs/screenshots/14-talkback-fila.png" width="240" alt="Foco de TalkBack sobre una fila completa"> | <img src="docs/screenshots/15-talkback-fila-siguiente.png" width="240" alt="Foco de TalkBack sobre la fila siguiente"> | <img src="docs/screenshots/16-talkback-detalle-volver.png" width="240" alt="Foco de TalkBack en el botón Volver del detalle"> |
 | Carátula, título y artista forman un único elemento. | El siguiente foco salta a la fila contigua. | Al abrir el detalle, el foco empieza en «Volver». |

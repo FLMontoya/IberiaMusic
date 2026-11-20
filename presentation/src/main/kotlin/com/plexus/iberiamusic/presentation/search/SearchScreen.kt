@@ -1,7 +1,10 @@
 package com.plexus.iberiamusic.presentation.search
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,19 +16,23 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +51,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
+import com.plexus.iberiamusic.presentation.theme.SearchFieldContainer
+import com.plexus.iberiamusic.presentation.theme.SearchFieldLabel
+import com.plexus.iberiamusic.presentation.theme.SearchFieldText
+import com.plexus.iberiamusic.presentation.theme.SpotifyGreen
 
 /** Connects [SearchScreen] to its [SearchViewModel]. */
 @Composable
@@ -74,19 +85,26 @@ fun SearchScreen(
     modifier: Modifier = Modifier,
 ) {
   val keyboard = LocalSoftwareKeyboardController.current
+  val interactionSource = remember { MutableInteractionSource() }
+  val focused by interactionSource.collectIsFocusedAsState()
 
   Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
     Text(
         text = stringResource(R.string.search_title),
-        style = MaterialTheme.typography.headlineSmall,
+        style = MaterialTheme.typography.headlineMedium,
         modifier = Modifier.semantics { heading() },
     )
     Spacer(Modifier.size(16.dp))
-    OutlinedTextField(
+    TextField(
         value = query,
         onValueChange = onQueryChange,
         label = { Text(stringResource(R.string.search_label)) },
         singleLine = true,
+        shape = CircleShape,
+        colors = searchFieldColors(),
+        interactionSource = interactionSource,
+        // The search icon is decorative: the label already says what the field is for.
+        leadingIcon = { Icon(imageVector = Icons.Filled.Search, contentDescription = null) },
         trailingIcon = {
           if (query.isNotEmpty()) {
             IconButton(onClick = { onQueryChange("") }) {
@@ -105,12 +123,33 @@ fun SearchScreen(
                   keyboard?.hide()
                 },
             ),
-        modifier = Modifier.fillMaxWidth(),
+        // The green ring is the visible keyboard/touch focus indicator on the white pill.
+        modifier =
+            Modifier.fillMaxWidth().border(if (focused) 3.dp else 0.dp, SpotifyGreen, CircleShape),
     )
     Spacer(Modifier.size(8.dp))
     SearchBody(uiState = uiState, query = query, onTrackClick = onTrackClick)
   }
 }
+
+/** White pill with dark text; the indicator line is off because the focus ring replaces it. */
+@Composable
+private fun searchFieldColors() =
+    TextFieldDefaults.colors(
+        focusedContainerColor = SearchFieldContainer,
+        unfocusedContainerColor = SearchFieldContainer,
+        focusedTextColor = SearchFieldText,
+        unfocusedTextColor = SearchFieldText,
+        cursorColor = SearchFieldText,
+        focusedLabelColor = SearchFieldLabel,
+        unfocusedLabelColor = SearchFieldLabel,
+        focusedLeadingIconColor = SearchFieldText,
+        unfocusedLeadingIconColor = SearchFieldText,
+        focusedTrailingIconColor = SearchFieldText,
+        unfocusedTrailingIconColor = SearchFieldText,
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+    )
 
 @Composable
 private fun SearchBody(uiState: SearchUiState, query: String, onTrackClick: (Track) -> Unit) {
@@ -206,7 +245,7 @@ private fun TrackRow(track: Track, onClick: () -> Unit) {
     )
     Spacer(Modifier.width(16.dp))
     Column(modifier = Modifier.weight(1f)) {
-      Text(text = track.name, style = MaterialTheme.typography.bodyLarge)
+      Text(text = track.name, style = MaterialTheme.typography.titleMedium)
       Text(
           text = subtitle,
           style = MaterialTheme.typography.bodyMedium,

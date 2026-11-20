@@ -25,7 +25,7 @@ import coil3.compose.AsyncImage
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 
-private val ARTWORK_SIZE = 200.dp
+private val ARTWORK_SIZE = 240.dp
 
 /** Details of a [Track]. Fields the track does not have show a dash. Scrolls on large fonts. */
 @Composable
@@ -47,7 +47,7 @@ fun DetailScreen(track: Track, onBack: () -> Unit, modifier: Modifier = Modifier
     }
     Text(
         text = track.name,
-        style = MaterialTheme.typography.headlineSmall,
+        style = MaterialTheme.typography.headlineMedium,
         modifier = Modifier.semantics { heading() },
     )
     Spacer(Modifier.size(16.dp))
