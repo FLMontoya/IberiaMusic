@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
+import io.mockk.confirmVerified
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Rule
@@ -142,6 +143,7 @@ class DetailScreenTest {
     rule.onNode(hasClickAction() and hasText(string(R.string.detail_back))).performClick()
 
     verify(exactly = 1) { onBack() }
+    confirmVerified(onBack)
   }
 
   @Test

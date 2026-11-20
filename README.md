@@ -31,7 +31,7 @@ App Android de búsqueda de música con pantalla de detalle, hecha con Kotlin y 
 | Serialización | kotlinx.serialization | 1.13.0 |
 | Imágenes | Coil | 3.6.3 |
 | Formato | ktfmt (`com.ncorti.ktfmt.gradle`) | 0.28.0 |
-| Tests | JUnit 4, coroutines-test, MockWebServer y Robolectric | 4.13.2, 1.11.0, 5.5.1 y 4.18.1 |
+| Tests | JUnit 4, MockK, Turbine, kotlin-test, coroutines-test, MockWebServer y Robolectric | 4.13.2, 1.14.12, 1.2.1, 2.3.21, 1.11.0, 5.5.1 y 4.18.1 |
 
 Android: `minSdk` 26, `targetSdk` y `compileSdk` 37. Las versiones están centralizadas en
 `gradle/libs.versions.toml`.
@@ -41,7 +41,7 @@ Android: `minSdk` 26, `targetSdk` y `compileSdk` 37. Las versiones están centra
 [iTunes Search API](https://itunes.apple.com/search?term=queen&media=music): pública y sin API key.
 Se consulta `search?term=...&media=music&entity=song&limit=50`, es decir, solo canciones y un
 máximo de 50 resultados. El detalle muestra nombre, artista, álbum, género, duración y fecha de
-lanzamiento, junto con la carátula; los campos que iTunes no devuelve se omiten.
+lanzamiento, junto con la carátula; los campos que iTunes no devuelve se muestran con un guion («-»).
 
 ## Cómo ejecutar
 
@@ -52,6 +52,7 @@ Requisitos: Android Studio reciente (o JDK 25 para la línea de comandos) y cone
 ./gradlew installDebug         # la instala en un dispositivo o emulador (API 26+)
 ./gradlew ktfmtCheck test      # formato y tests unitarios (lo mismo que ejecuta el CI)
 ./gradlew ktfmtFormat          # aplica el formato
+./gradlew connectedDebugAndroidTest  # tests de instrumentación de accesibilidad (necesita un emulador)
 ```
 
 En Windows usa `gradlew.bat` en lugar de `./gradlew`.
@@ -95,7 +96,11 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 - Con caché válida no hay llamada de red. Si la entrada ha expirado, se consulta la red y se
   actualiza la caché. Los errores no se cachean.
 - El reloj es una interfaz propia (`TimeProvider`) inyectada en la caché, de modo que los tests
-  simulan el paso del tiempo sin esperas.
+  simulan el paso del tiempo sin esperas. La implementación real usa un reloj monotónico
+  (`System.nanoTime()`): atrasar la hora del dispositivo no resucita entradas caducadas, y si el
+  reloj retrocede la entrada se trata como caducada.
+- La caché guarda como máximo 50 entradas y expulsa la menos usada recientemente. Al escribir se
+  purgan las entradas caducadas, aunque no se vuelvan a consultar.
 - La clave es la query sin espacios en los extremos y en minúsculas: "Queen", " queen " y "QUEEN"
   comparten entrada.
 - Los resultados se deduplican por `id`, porque la lista usa el `id` como clave y debe ser única.
@@ -109,7 +114,8 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
   cancela la búsqueda en curso, y los resultados de una búsqueda cancelada nunca se emiten.
 - El debounce está dentro de `flatMapLatest` (un `delay`) y no como operador `debounce` previo: con
   el operador, durante los 300 ms seguía visible la lista de la query anterior junto al texto nuevo.
-- La acción de búsqueda del teclado salta el debounce y también reintenta tras un error.
+- La acción de búsqueda del teclado y el botón «Reintentar» del error saltan el debounce y
+  reintentan la búsqueda.
 - No se guarda ningún `Job` a mano. `CancellationException` siempre se relanza, nunca se captura.
 
 ### Accesibilidad
@@ -148,13 +154,21 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 
 ## Tests
 
-Se ejecutan en JVM con `./gradlew test`:
+Los tests usan MockK en lugar de dobles escritos a mano, Turbine para los `Flow` y `kotlin.test`
+para las aserciones. Se ejecutan en JVM con `./gradlew test`:
 
-- `domain`: caso de uso con repositorio fake.
+- `domain`: caso de uso con el repositorio simulado con MockK.
 - `data`: caché (acierto, fallo y expiración), mapper, repositorio (con caché válida no llama a
   la red; con caché expirada, refresca) y contrato de `ITunesApi` contra un `MockWebServer`.
-- `presentation`: ViewModel (cancelación), y semantics de las pantallas con Robolectric.
+- `presentation`: ViewModel (debounce, cancelación y reintento, con Turbine) y semantics de las
+  pantallas con Robolectric.
 - `app`: navegación búsqueda → detalle y guardado de la canción seleccionada.
+
+En un dispositivo o emulador, `./gradlew connectedDebugAndroidTest` ejecuta los tests de
+instrumentación de accesibilidad (`app/src/androidTest`): los chequeos automáticos del Accessibility
+Test Framework (áreas táctiles, contraste y etiquetas) sobre cada estado de las dos pantallas, la
+semántica para TalkBack, la fuente al 200 % y la navegación con el teclado. El CI no los ejecuta,
+porque no dispone de emulador: solo corre `ktfmtCheck` y `test`.
 
 ## Capturas
 
@@ -172,8 +186,8 @@ Tomadas en un emulador Pixel 6 (API 37, en español) con la app y la API reales 
 |---|---|
 | <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje de error en rosa claro con icono de aviso"> |
 
-El mensaje de vacío cita lo buscado. El de error lleva icono y texto, y la tecla de búsqueda del
-teclado reintenta la búsqueda al recuperar la conexión.
+El mensaje de vacío cita lo buscado. El de error lleva icono y texto, y se reintenta con el botón
+«Reintentar» (área táctil de 48 dp) o con la tecla de búsqueda del teclado al recuperar la conexión.
 
 ### Fuente al 200 %
 

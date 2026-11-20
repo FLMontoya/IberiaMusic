@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
+import io.mockk.confirmVerified
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Rule
@@ -99,6 +100,7 @@ class SearchScreenTest {
     rule.onNode(hasSetTextAction()).performTextInput("queen")
 
     verify(exactly = 1) { onQueryChange("queen") }
+    confirmVerified(onQueryChange)
   }
 
   @Test
@@ -109,6 +111,7 @@ class SearchScreenTest {
     rule.onNode(hasSetTextAction()).performImeAction()
 
     verify(exactly = 1) { onSearch() }
+    confirmVerified(onSearch)
   }
 
   @Test
@@ -129,6 +132,7 @@ class SearchScreenTest {
     clear.performClick()
 
     verify(exactly = 1) { onQueryChange("") }
+    confirmVerified(onQueryChange)
   }
 
   @Test
@@ -191,6 +195,7 @@ class SearchScreenTest {
     retry.performClick()
 
     verify(exactly = 1) { onSearch() }
+    confirmVerified(onSearch)
   }
 
   @Test
@@ -248,6 +253,7 @@ class SearchScreenTest {
     rule.onNode(hasClickAction() and hasText("Bohemian Rhapsody")).performClick()
 
     verify(exactly = 1) { onTrackClick(track) }
+    confirmVerified(onTrackClick)
   }
 
   @Test
