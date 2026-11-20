@@ -35,4 +35,12 @@ class TrackSaverTest {
   fun `no selection is saved as nothing and restored as no selection`() {
     assertNull(restoreTrack(saveTrack(null)))
   }
+
+  @Test
+  fun `a saved state with a wrong type in a required field is restored as no selection`() {
+    val saved = saveTrack(Track(id = 3L, name = "Song", artistName = "Artist")).toMutableList()
+    saved[0] = "not a number"
+
+    assertNull(restoreTrack(saved))
+  }
 }

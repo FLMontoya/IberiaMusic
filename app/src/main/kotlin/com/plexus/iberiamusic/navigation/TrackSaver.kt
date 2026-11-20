@@ -28,15 +28,14 @@ internal fun saveTrack(track: Track?): List<Any?> =
     }
 
 internal fun restoreTrack(saved: List<Any?>): Track? {
-  if (saved.isEmpty()) return null
   return Track(
-      id = saved[0] as Long,
-      name = saved[1] as String,
-      artistName = saved[2] as String,
-      albumName = saved[3] as String?,
-      artworkUrl = saved[4] as String?,
-      genre = saved[5] as String?,
-      durationMillis = saved[6] as Long?,
-      releaseDate = saved[7] as String?,
+      id = saved.getOrNull(0) as? Long ?: return null,
+      name = saved.getOrNull(1) as? String ?: return null,
+      artistName = saved.getOrNull(2) as? String ?: return null,
+      albumName = saved.getOrNull(3) as? String,
+      artworkUrl = saved.getOrNull(4) as? String,
+      genre = saved.getOrNull(5) as? String,
+      durationMillis = saved.getOrNull(6) as? Long,
+      releaseDate = saved.getOrNull(7) as? String,
   )
 }
