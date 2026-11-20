@@ -12,9 +12,9 @@ private fun contrast(a: Color, b: Color): Double {
   return (lighter + 0.05) / (darker + 0.05)
 }
 
-class SpotifyPaletteTest {
+class IberiaPaletteTest {
 
-  private val scheme = SpotifyColorScheme
+  private val scheme = IberiaColorScheme
 
   private fun assertText(foreground: Color, background: Color, name: String) {
     val ratio = contrast(foreground, background)

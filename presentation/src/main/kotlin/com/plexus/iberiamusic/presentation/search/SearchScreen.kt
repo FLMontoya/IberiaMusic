@@ -52,10 +52,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
+import com.plexus.iberiamusic.presentation.theme.IberiaGreen
 import com.plexus.iberiamusic.presentation.theme.SearchFieldContainer
 import com.plexus.iberiamusic.presentation.theme.SearchFieldLabel
 import com.plexus.iberiamusic.presentation.theme.SearchFieldText
-import com.plexus.iberiamusic.presentation.theme.SpotifyGreen
 
 /** Connects [SearchScreen] to its [SearchViewModel]. */
 @Composable
@@ -126,7 +126,7 @@ fun SearchScreen(
             ),
         // The green ring is the visible keyboard/touch focus indicator on the white pill.
         modifier =
-            Modifier.fillMaxWidth().border(if (focused) 3.dp else 0.dp, SpotifyGreen, CircleShape),
+            Modifier.fillMaxWidth().border(if (focused) 3.dp else 0.dp, IberiaGreen, CircleShape),
     )
     Spacer(Modifier.size(8.dp))
     SearchBody(uiState = uiState, query = query, onTrackClick = onTrackClick, onRetry = onSearch)
