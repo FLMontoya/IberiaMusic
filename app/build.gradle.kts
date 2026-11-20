@@ -58,6 +58,8 @@ dependencies {
   testImplementation(libs.androidx.compose.ui.test.junit4)
   debugImplementation(platform(libs.androidx.compose.bom))
   debugImplementation(libs.androidx.compose.ui.test.manifest)
+  // Espresso 3.7 (needed on Android 17) requires a newer concurrent-futures than the one AGP pins.
+  debugImplementation(libs.androidx.concurrent.futures)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -66,3 +68,10 @@ dependencies {
   androidTestImplementation(libs.mockk.android)
   androidTestImplementation(libs.kotlin.test)
 }
+
+// The accessibility framework brings Guava, which already contains ListenableFuture, while AGP pins
+// the empty listenablefuture:1.0 artifact. Dropping it from the androidTest classpath removes the
+// resolution conflict between the two.
+configurations
+    .matching { it.name.contains("AndroidTest", ignoreCase = true) }
+    .configureEach { exclude(group = "com.google.guava", module = "listenablefuture") }
