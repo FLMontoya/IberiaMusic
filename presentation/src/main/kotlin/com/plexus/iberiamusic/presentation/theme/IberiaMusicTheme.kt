@@ -10,60 +10,60 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-// Dark, Spotify-like palette. Every text/background pair is checked in SpotifyPaletteTest.
-internal val SpotifyBackground = Color(0xFF121212)
-internal val SpotifySurface = Color(0xFF181818)
-internal val SpotifyElevated = Color(0xFF282828)
-internal val SpotifyGreen = Color(0xFF1DB954)
-internal val SpotifyWhite = Color(0xFFFFFFFF)
-internal val SpotifyGray = Color(0xFFB3B3B3)
-internal val SpotifyOutline = Color(0xFF727272)
-internal val SpotifyError = Color(0xFFF3727F)
+// Dark palette. Every text/background pair is checked in IberiaPaletteTest.
+internal val IberiaBackground = Color(0xFF121212)
+internal val IberiaSurface = Color(0xFF181818)
+internal val IberiaElevated = Color(0xFF282828)
+internal val IberiaGreen = Color(0xFF1DB954)
+internal val IberiaWhite = Color(0xFFFFFFFF)
+internal val IberiaGray = Color(0xFFB3B3B3)
+internal val IberiaOutline = Color(0xFF727272)
+internal val IberiaError = Color(0xFFF3727F)
 
-// The search field is a white pill with dark text, as in Spotify's search.
+// The search field is a white pill with dark text.
 internal val SearchFieldContainer = Color(0xFFFFFFFF)
 internal val SearchFieldText = Color(0xFF000000)
 internal val SearchFieldLabel = Color(0xFF535353)
 
-internal val SpotifyColorScheme =
+internal val IberiaColorScheme =
     darkColorScheme(
-        primary = SpotifyGreen,
+        primary = IberiaGreen,
         onPrimary = Color.Black,
-        background = SpotifyBackground,
-        onBackground = SpotifyWhite,
-        surface = SpotifySurface,
-        onSurface = SpotifyWhite,
-        surfaceVariant = SpotifyElevated,
-        onSurfaceVariant = SpotifyGray,
-        outline = SpotifyOutline,
-        error = SpotifyError,
+        background = IberiaBackground,
+        onBackground = IberiaWhite,
+        surface = IberiaSurface,
+        onSurface = IberiaWhite,
+        surfaceVariant = IberiaElevated,
+        onSurfaceVariant = IberiaGray,
+        outline = IberiaOutline,
+        error = IberiaError,
         onError = Color.Black,
     )
 
 private val baseTypography = Typography()
 
-/** Bold headings and semi-bold titles, the way Spotify sets its screen and track names. */
-internal val SpotifyTypography =
+/** Bold headings and semi-bold titles for screen and track names. */
+internal val IberiaTypography =
     baseTypography.copy(
         headlineMedium = baseTypography.headlineMedium.copy(fontWeight = FontWeight.Bold),
         headlineSmall = baseTypography.headlineSmall.copy(fontWeight = FontWeight.Bold),
         titleMedium = baseTypography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
     )
 
-/** Spotify keeps square-ish corners (4 dp) on covers and cards. */
-internal val SpotifyShapes =
+/** Square-ish corners (4 dp) on covers and cards. */
+internal val IberiaShapes =
     Shapes(
         small = RoundedCornerShape(4.dp),
         medium = RoundedCornerShape(4.dp),
     )
 
-/** Material 3 theme with a Spotify-like look: always dark, green accent, bold type. */
+/** Material 3 theme with a dark look: always dark, green accent, bold type. */
 @Composable
 fun IberiaMusicTheme(content: @Composable () -> Unit) {
   MaterialTheme(
-      colorScheme = SpotifyColorScheme,
-      typography = SpotifyTypography,
-      shapes = SpotifyShapes,
+      colorScheme = IberiaColorScheme,
+      typography = IberiaTypography,
+      shapes = IberiaShapes,
       content = content,
   )
 }
