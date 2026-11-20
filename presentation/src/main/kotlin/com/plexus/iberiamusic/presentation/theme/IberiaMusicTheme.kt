@@ -1,51 +1,69 @@
 package com.plexus.iberiamusic.presentation.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.ColorScheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 
-/**
- * Material 3 theme following the system light/dark setting. On Android 12 and later it uses the
- * colors derived from the user's wallpaper ([dynamicColor]); before that, or when it is turned off,
- * it uses the default accessible palette.
- */
+// Dark, Spotify-like palette. Every text/background pair is checked in SpotifyPaletteTest.
+internal val SpotifyBackground = Color(0xFF121212)
+internal val SpotifySurface = Color(0xFF181818)
+internal val SpotifyElevated = Color(0xFF282828)
+internal val SpotifyGreen = Color(0xFF1DB954)
+internal val SpotifyWhite = Color(0xFFFFFFFF)
+internal val SpotifyGray = Color(0xFFB3B3B3)
+internal val SpotifyOutline = Color(0xFF727272)
+internal val SpotifyError = Color(0xFFF3727F)
+
+// The search field is a white pill with dark text, as in Spotify's search.
+internal val SearchFieldContainer = Color(0xFFFFFFFF)
+internal val SearchFieldText = Color(0xFF000000)
+internal val SearchFieldLabel = Color(0xFF535353)
+
+internal val SpotifyColorScheme =
+    darkColorScheme(
+        primary = SpotifyGreen,
+        onPrimary = Color.Black,
+        background = SpotifyBackground,
+        onBackground = SpotifyWhite,
+        surface = SpotifySurface,
+        onSurface = SpotifyWhite,
+        surfaceVariant = SpotifyElevated,
+        onSurfaceVariant = SpotifyGray,
+        outline = SpotifyOutline,
+        error = SpotifyError,
+        onError = Color.Black,
+    )
+
+private val baseTypography = Typography()
+
+/** Bold headings and semi-bold titles, the way Spotify sets its screen and track names. */
+internal val SpotifyTypography =
+    baseTypography.copy(
+        headlineMedium = baseTypography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        headlineSmall = baseTypography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+        titleMedium = baseTypography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+    )
+
+/** Spotify keeps square-ish corners (4 dp) on covers and cards. */
+internal val SpotifyShapes =
+    Shapes(
+        small = RoundedCornerShape(4.dp),
+        medium = RoundedCornerShape(4.dp),
+    )
+
+/** Material 3 theme with a Spotify-like look: always dark, green accent, bold type. */
 @Composable
-fun IberiaMusicTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit,
-) {
-  val context = LocalContext.current
+fun IberiaMusicTheme(content: @Composable () -> Unit) {
   MaterialTheme(
-      colorScheme =
-          chooseColorScheme(
-              darkTheme = darkTheme,
-              dynamicColor = dynamicColor,
-              sdkInt = Build.VERSION.SDK_INT,
-              dynamicLight = { dynamicLightColorScheme(context) },
-              dynamicDark = { dynamicDarkColorScheme(context) },
-          ),
+      colorScheme = SpotifyColorScheme,
+      typography = SpotifyTypography,
+      shapes = SpotifyShapes,
       content = content,
   )
 }
-
-internal fun chooseColorScheme(
-    darkTheme: Boolean,
-    dynamicColor: Boolean,
-    sdkInt: Int,
-    dynamicLight: () -> ColorScheme,
-    dynamicDark: () -> ColorScheme,
-): ColorScheme =
-    when {
-      dynamicColor && sdkInt >= Build.VERSION_CODES.S ->
-          if (darkTheme) dynamicDark() else dynamicLight()
-      darkTheme -> darkColorScheme()
-      else -> lightColorScheme()
-    }
