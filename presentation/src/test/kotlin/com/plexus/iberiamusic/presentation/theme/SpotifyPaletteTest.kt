@@ -2,7 +2,7 @@ package com.plexus.iberiamusic.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import org.junit.Assert.assertTrue
+import kotlin.test.assertTrue
 import org.junit.Test
 
 /** WCAG contrast ratio between two colors: from 1:1 (equal) to 21:1 (black on white). */
@@ -18,7 +18,7 @@ class SpotifyPaletteTest {
 
   private fun assertText(foreground: Color, background: Color, name: String) {
     val ratio = contrast(foreground, background)
-    assertTrue("$name has contrast $ratio, below 4.5:1", ratio >= 4.5)
+    assertTrue(ratio >= 4.5, "$name has contrast $ratio, below 4.5:1")
   }
 
   @Test

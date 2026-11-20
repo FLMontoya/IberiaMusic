@@ -31,7 +31,6 @@ import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,22 +93,22 @@ class SearchScreenTest {
 
   @Test
   fun `typing notifies the new query`() {
-    var received = ""
-    show(onQueryChange = { received = it })
+    val onQueryChange = mockk<(String) -> Unit>(relaxed = true)
+    show(onQueryChange = onQueryChange)
 
     rule.onNode(hasSetTextAction()).performTextInput("queen")
 
-    assertEquals("queen", received)
+    verify(exactly = 1) { onQueryChange("queen") }
   }
 
   @Test
   fun `the keyboard search action reports a search`() {
-    var searches = 0
-    show(query = "queen", onSearch = { searches++ })
+    val onSearch = mockk<() -> Unit>(relaxed = true)
+    show(query = "queen", onSearch = onSearch)
 
     rule.onNode(hasSetTextAction()).performImeAction()
 
-    assertEquals(1, searches)
+    verify(exactly = 1) { onSearch() }
   }
 
   @Test
@@ -121,15 +120,15 @@ class SearchScreenTest {
 
   @Test
   fun `clear button empties the query and meets the minimum touch target`() {
-    var received: String? = null
-    show(query = "queen", onQueryChange = { received = it })
+    val onQueryChange = mockk<(String) -> Unit>(relaxed = true)
+    show(query = "queen", onQueryChange = onQueryChange)
 
     val clear =
         rule.onNode(hasClickAction() and hasContentDescription(string(R.string.search_clear)))
     clear.assertTouchHeightIsEqualTo(48.dp).assertTouchWidthIsEqualTo(48.dp)
     clear.performClick()
 
-    assertEquals("", received)
+    verify(exactly = 1) { onQueryChange("") }
   }
 
   @Test
@@ -243,12 +242,12 @@ class SearchScreenTest {
 
   @Test
   fun `clicking a row reports the track`() {
-    var clicked: Track? = null
-    show(SearchUiState.Content(listOf(track)), onTrackClick = { clicked = it })
+    val onTrackClick = mockk<(Track) -> Unit>(relaxed = true)
+    show(SearchUiState.Content(listOf(track)), onTrackClick = onTrackClick)
 
     rule.onNode(hasClickAction() and hasText("Bohemian Rhapsody")).performClick()
 
-    assertEquals(track, clicked)
+    verify(exactly = 1) { onTrackClick(track) }
   }
 
   @Test
