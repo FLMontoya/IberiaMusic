@@ -29,7 +29,8 @@ class IberiaMusicAppWideScreenTest {
   fun `content keeps a readable width and stays centered on wide screens`() {
     val repository: SearchRepository = mockk()
     coEvery { repository.search(any()) } returns SearchResult.Empty
-    rule.setContent { IberiaMusicApp(SearchViewModel(SearchTracksUseCase(repository))) }
+    val viewModel = SearchViewModel(SearchTracksUseCase(repository))
+    rule.setContent { IberiaMusicApp(viewModel) }
 
     val bounds = rule.onNode(hasSetTextAction()).getUnclippedBoundsInRoot()
 
