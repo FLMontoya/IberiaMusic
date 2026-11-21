@@ -7,7 +7,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.plexus.iberiamusic.navigation.IberiaMusicApp
+import com.plexus.iberiamusic.presentation.navigation.IberiaMusicApp
 import com.plexus.iberiamusic.presentation.search.SearchViewModel
 
 class MainActivity : ComponentActivity() {

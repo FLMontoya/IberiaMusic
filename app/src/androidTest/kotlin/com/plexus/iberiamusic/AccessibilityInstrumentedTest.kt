@@ -32,8 +32,8 @@ import com.plexus.iberiamusic.domain.model.SearchResult
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.domain.repository.SearchRepository
 import com.plexus.iberiamusic.domain.usecase.SearchTracksUseCase
-import com.plexus.iberiamusic.navigation.IberiaMusicApp
 import com.plexus.iberiamusic.presentation.R
+import com.plexus.iberiamusic.presentation.navigation.IberiaMusicApp
 import com.plexus.iberiamusic.presentation.search.SearchViewModel
 import io.mockk.coEvery
 import io.mockk.mockk

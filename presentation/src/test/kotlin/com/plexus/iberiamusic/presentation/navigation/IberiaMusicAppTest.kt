@@ -1,4 +1,4 @@
-package com.plexus.iberiamusic.navigation
+package com.plexus.iberiamusic.presentation.navigation
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
