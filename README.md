@@ -56,6 +56,7 @@ lanzamiento, junto con la carátula; los campos que iTunes no devuelve se muestr
 ```bash
 ./gradlew assembleDebug        # compila la app
 ./gradlew installDebug         # la instala en un dispositivo o emulador (API 26+)
+./gradlew installStaging       # la build de release (con R8), firmada con la clave debug, junto a la debug
 ./gradlew ktfmtCheck test      # formato y tests unitarios (lo mismo que ejecuta el CI)
 ./gradlew ktfmtFormat          # aplica el formato
 ./gradlew connectedDebugAndroidTest  # tests de instrumentación de accesibilidad (necesita un emulador)
@@ -68,6 +69,10 @@ Pasos desde cero:
 1. Clona el repositorio: `git clone https://github.com/FLMontoya/IberiaMusic.git`.
 2. Ábrelo en Android Studio y deja que sincronice Gradle, o usa la línea de comandos.
 3. Arranca un emulador (API 26 o superior) o conecta un dispositivo y ejecuta `installDebug`.
+
+`staging` sirve para probar la app tal como sale en release (R8 activo) sin sustituir la debug: usa
+el paquete `com.plexus.iberiamusic.staging`. Está firmada con la clave debug, así que no sirve para
+publicar; el CI compila `release` sin firmar.
 
 El Gradle daemon pide JDK 25 (`gradle/gradle-daemon-jvm.properties`), que el CI también usa.
 
