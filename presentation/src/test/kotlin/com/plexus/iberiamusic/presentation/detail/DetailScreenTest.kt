@@ -5,6 +5,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
@@ -19,7 +20,9 @@ import androidx.compose.ui.unit.dp
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
-import org.junit.Assert.assertEquals
+import io.mockk.confirmVerified
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -83,14 +86,27 @@ class DetailScreenTest {
   }
 
   @Test
-  fun `omits the fields the track does not have`() {
+  fun `shows a dash for the fields the track does not have`() {
+    show(fullTrack.copy(albumName = null, genre = null))
+    val dash = string(R.string.detail_value_missing)
+
+    rule.onNode(field(R.string.detail_artist, "Queen")).assertExists()
+    rule.onNode(field(R.string.detail_album, dash)).assertExists()
+    rule.onNode(field(R.string.detail_genre, dash)).assertExists()
+    rule.onNode(field(R.string.detail_duration, "5:54")).assertExists()
+  }
+
+  @Test
+  fun `shows a dash in every optional field when all are missing`() {
     show(Track(id = 2L, name = "Song", artistName = "Artist"))
+    val dash = string(R.string.detail_value_missing)
 
     rule.onNode(field(R.string.detail_artist, "Artist")).assertExists()
-    rule.onNodeWithText(string(R.string.detail_album)).assertDoesNotExist()
-    rule.onNodeWithText(string(R.string.detail_genre)).assertDoesNotExist()
-    rule.onNodeWithText(string(R.string.detail_duration)).assertDoesNotExist()
-    rule.onNodeWithText(string(R.string.detail_release_date)).assertDoesNotExist()
+    rule.onNode(field(R.string.detail_album, dash)).assertExists()
+    rule.onNode(field(R.string.detail_genre, dash)).assertExists()
+    rule.onNode(field(R.string.detail_duration, dash)).assertExists()
+    rule.onNode(field(R.string.detail_release_date, dash)).assertExists()
+    rule.onAllNodes(hasText(dash)).assertCountEquals(4)
   }
 
   @Test
@@ -121,12 +137,13 @@ class DetailScreenTest {
 
   @Test
   fun `back button reports the click`() {
-    var backs = 0
-    show(fullTrack, onBack = { backs++ })
+    val onBack = mockk<() -> Unit>(relaxed = true)
+    show(fullTrack, onBack = onBack)
 
     rule.onNode(hasClickAction() and hasText(string(R.string.detail_back))).performClick()
 
-    assertEquals(1, backs)
+    verify(exactly = 1) { onBack() }
+    confirmVerified(onBack)
   }
 
   @Test

@@ -29,7 +29,9 @@ import androidx.compose.ui.unit.dp
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
-import org.junit.Assert.assertEquals
+import io.mockk.confirmVerified
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,22 +94,24 @@ class SearchScreenTest {
 
   @Test
   fun `typing notifies the new query`() {
-    var received = ""
-    show(onQueryChange = { received = it })
+    val onQueryChange = mockk<(String) -> Unit>(relaxed = true)
+    show(onQueryChange = onQueryChange)
 
     rule.onNode(hasSetTextAction()).performTextInput("queen")
 
-    assertEquals("queen", received)
+    verify(exactly = 1) { onQueryChange("queen") }
+    confirmVerified(onQueryChange)
   }
 
   @Test
   fun `the keyboard search action reports a search`() {
-    var searches = 0
-    show(query = "queen", onSearch = { searches++ })
+    val onSearch = mockk<() -> Unit>(relaxed = true)
+    show(query = "queen", onSearch = onSearch)
 
     rule.onNode(hasSetTextAction()).performImeAction()
 
-    assertEquals(1, searches)
+    verify(exactly = 1) { onSearch() }
+    confirmVerified(onSearch)
   }
 
   @Test
@@ -119,15 +123,16 @@ class SearchScreenTest {
 
   @Test
   fun `clear button empties the query and meets the minimum touch target`() {
-    var received: String? = null
-    show(query = "queen", onQueryChange = { received = it })
+    val onQueryChange = mockk<(String) -> Unit>(relaxed = true)
+    show(query = "queen", onQueryChange = onQueryChange)
 
     val clear =
         rule.onNode(hasClickAction() and hasContentDescription(string(R.string.search_clear)))
     clear.assertTouchHeightIsEqualTo(48.dp).assertTouchWidthIsEqualTo(48.dp)
     clear.performClick()
 
-    assertEquals("", received)
+    verify(exactly = 1) { onQueryChange("") }
+    confirmVerified(onQueryChange)
   }
 
   @Test
@@ -167,6 +172,45 @@ class SearchScreenTest {
   }
 
   @Test
+  fun `retry button is shown in the error state`() {
+    show(SearchUiState.Error)
+
+    rule.onNode(hasClickAction() and hasText(string(R.string.search_retry))).assertIsDisplayed()
+  }
+
+  @Test
+  fun `no retry button outside the error state`() {
+    show(SearchUiState.Idle)
+
+    rule.onNode(hasText(string(R.string.search_retry))).assertDoesNotExist()
+  }
+
+  @Test
+  fun `retry button reports a search and meets the minimum touch target`() {
+    val onSearch = mockk<() -> Unit>(relaxed = true)
+    show(SearchUiState.Error, query = "queen", onSearch = onSearch)
+
+    val retry = rule.onNode(hasClickAction() and hasText(string(R.string.search_retry)))
+    retry.assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp)
+    retry.performClick()
+
+    verify(exactly = 1) { onSearch() }
+    confirmVerified(onSearch)
+  }
+
+  @Test
+  fun `error message stays an assertive live region next to the retry button`() {
+    show(SearchUiState.Error)
+
+    rule
+        .onNodeWithText(string(R.string.search_error))
+        .assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Assertive),
+        )
+    rule.onNode(hasText(string(R.string.search_retry))).assertIsDisplayed()
+  }
+
+  @Test
   fun `each result row is a single merged element with all its text`() {
     show(SearchUiState.Content(listOf(track)))
 
@@ -203,12 +247,13 @@ class SearchScreenTest {
 
   @Test
   fun `clicking a row reports the track`() {
-    var clicked: Track? = null
-    show(SearchUiState.Content(listOf(track)), onTrackClick = { clicked = it })
+    val onTrackClick = mockk<(Track) -> Unit>(relaxed = true)
+    show(SearchUiState.Content(listOf(track)), onTrackClick = onTrackClick)
 
     rule.onNode(hasClickAction() and hasText("Bohemian Rhapsody")).performClick()
 
-    assertEquals(track, clicked)
+    verify(exactly = 1) { onTrackClick(track) }
+    confirmVerified(onTrackClick)
   }
 
   @Test

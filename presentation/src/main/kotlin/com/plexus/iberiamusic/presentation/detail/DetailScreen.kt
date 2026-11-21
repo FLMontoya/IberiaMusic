@@ -25,9 +25,9 @@ import coil3.compose.AsyncImage
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 
-private val ARTWORK_SIZE = 200.dp
+private val ARTWORK_SIZE = 240.dp
 
-/** Details of a [Track]. Fields the track does not have are left out. Scrolls on large fonts. */
+/** Details of a [Track]. Fields the track does not have show a dash. Scrolls on large fonts. */
 @Composable
 fun DetailScreen(track: Track, onBack: () -> Unit, modifier: Modifier = Modifier) {
   Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
@@ -47,15 +47,22 @@ fun DetailScreen(track: Track, onBack: () -> Unit, modifier: Modifier = Modifier
     }
     Text(
         text = track.name,
-        style = MaterialTheme.typography.headlineSmall,
+        style = MaterialTheme.typography.headlineMedium,
         modifier = Modifier.semantics { heading() },
     )
     Spacer(Modifier.size(16.dp))
+    val missing = stringResource(R.string.detail_value_missing)
     DetailField(R.string.detail_artist, track.artistName)
-    track.albumName?.let { DetailField(R.string.detail_album, it) }
-    track.genre?.let { DetailField(R.string.detail_genre, it) }
-    track.durationMillis?.let { DetailField(R.string.detail_duration, formatDuration(it)) }
-    track.releaseDate?.let { DetailField(R.string.detail_release_date, formatReleaseDate(it)) }
+    DetailField(R.string.detail_album, track.albumName ?: missing)
+    DetailField(R.string.detail_genre, track.genre ?: missing)
+    DetailField(
+        R.string.detail_duration,
+        track.durationMillis?.let { formatDuration(it) } ?: missing,
+    )
+    DetailField(
+        R.string.detail_release_date,
+        track.releaseDate?.let { formatReleaseDate(it) } ?: missing,
+    )
   }
 }
 

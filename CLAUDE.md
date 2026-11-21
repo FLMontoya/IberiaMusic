@@ -31,10 +31,10 @@ Los módulos `domain`, `data` y `presentation` viven en la raíz, al mismo nivel
 
 ```
 /
-├── app            # Android application. Composition root: DI manual + navegación
+├── app            # Android application. Composition root: DI manual, Activity y Application. Sin UI
 ├── domain         # Kotlin/JVM puro. Modelos, contratos y casos de uso. Sin dependencias Android
 ├── data           # Caché, API (Retrofit), DTOs, mappers e implementación del repositorio
-└── presentation   # Android library (Compose). ViewModels, pantallas y UI state
+└── presentation   # Android library (Compose). ViewModels, pantallas, UI state, tema y navegación
 ```
 
 Regla de dependencias (no romperla):
@@ -83,7 +83,7 @@ Ramas: `main` (la gestiona solo el usuario), `develop` (integración) y una rama
 9. `feature/presentation-search-viewmodel`: `SearchUiState` y `SearchViewModel` con cancelación de la búsqueda anterior + tests (una búsqueda cancelada no emite resultados).
 10. `feature/presentation-search-screen`: `SearchScreen` con la checklist de accesibilidad + tests de UI de semantics.
 11. `feature/presentation-detail-screen`: `DetailScreen` (mín. 3 campos) con accesibilidad.
-12. `feature/app-navigation-and-di`: DI manual y navegación búsqueda -> detalle en `app`.
+12. `feature/app-navigation-and-di`: DI manual en `app` y navegación búsqueda -> detalle (la navegación vive en `presentation`).
 13. `ci/run-tests-on-pr`: GitHub Actions que ejecuta `ktfmtCheck` y `test` en PRs hacia `develop`.
 14. `docs/readme`: README breve (API, cómo ejecutar, decisiones de caché, cancelación, arquitectura y accesibilidad).
 15. **Cierre**: Claude se detiene. El usuario abre la PR `develop` -> `main`.

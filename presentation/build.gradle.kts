@@ -24,6 +24,7 @@ dependencies {
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.compose.material.icons.core)
+  implementation(libs.androidx.navigation.compose)
   implementation(libs.coil.compose)
   implementation(libs.coil.network.okhttp)
   implementation(libs.androidx.lifecycle.viewmodel)
@@ -32,6 +33,9 @@ dependencies {
 
   testImplementation(platform(libs.androidx.compose.bom))
   testImplementation(libs.junit)
+  testImplementation(libs.mockk)
+  testImplementation(libs.kotlin.test)
+  testImplementation(libs.turbine)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.robolectric)
   testImplementation(libs.androidx.compose.ui.test.junit4)

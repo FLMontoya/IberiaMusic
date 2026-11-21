@@ -1,215 +1,311 @@
 package com.plexus.iberiamusic.presentation.search
 
+import app.cash.turbine.test
 import com.plexus.iberiamusic.domain.model.SearchResult
 import com.plexus.iberiamusic.domain.model.Track
+import com.plexus.iberiamusic.domain.repository.SearchRepository
 import com.plexus.iberiamusic.domain.usecase.SearchTracksUseCase
+import com.plexus.iberiamusic.presentation.testing.MainCoroutinesRule
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.confirmVerified
+import io.mockk.mockk
 import java.io.IOException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlin.test.assertEquals
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.advanceTimeBy
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class SearchViewModelTest {
 
-  private val dispatcher = StandardTestDispatcher()
-  private val repository = FakeSearchRepository()
-  private lateinit var viewModel: SearchViewModel
+  @get:Rule val coroutinesRule = MainCoroutinesRule()
+
+  private val repository: SearchRepository = mockk()
+  private val viewModel by lazy { SearchViewModel(SearchTracksUseCase(repository)) }
 
   private val queenTracks = listOf(Track(id = 1L, name = "Bohemian Rhapsody", artistName = "Queen"))
   private val bowieTracks = listOf(Track(id = 2L, name = "Heroes", artistName = "Bowie"))
 
-  @Before
-  fun setUp() {
-    Dispatchers.setMain(dispatcher)
-    viewModel = SearchViewModel(SearchTracksUseCase(repository))
-  }
-
-  @After
-  fun tearDown() {
-    Dispatchers.resetMain()
-  }
-
-  private fun TestScope.collectStates(): List<SearchUiState> {
-    val states = mutableListOf<SearchUiState>()
-    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-      viewModel.uiState.collect { states += it }
+  @Test
+  fun `GIVEN a new ViewModel THEN the state is Idle`() = coroutinesRule.runTest {
+    viewModel.uiState.test {
+      assertEquals(SearchUiState.Idle, awaitItem())
+      expectNoEvents()
     }
-    return states
-  }
 
-  private fun TestScope.type(text: String, thenWait: Long = SearchViewModel.DEBOUNCE_MILLIS) {
-    viewModel.onQueryChange(text)
-    advanceTimeBy(thenWait)
-    runCurrent()
+    confirmVerified(repository)
   }
 
   @Test
-  fun `initial state is Idle`() =
-      runTest(dispatcher) {
-        val states = collectStates()
+  fun `GIVEN the user types WHEN the query changes THEN the query follows the text`() =
+      coroutinesRule.runTest {
+        viewModel.query.test {
+          assertEquals("", awaitItem())
 
-        assertEquals(listOf<SearchUiState>(SearchUiState.Idle), states)
+          viewModel.onQueryChange("que")
+
+          assertEquals("que", awaitItem())
+        }
       }
 
   @Test
-  fun `query text follows what the user types`() =
-      runTest(dispatcher) {
-        collectStates()
+  fun `GIVEN the debounce has not elapsed WHEN typing THEN it does not search yet`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Empty
 
-        viewModel.onQueryChange("que")
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
 
-        assertEquals("que", viewModel.query.value)
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          advanceTimeBy(SearchViewModel.DEBOUNCE_MILLIS - 1)
+          runCurrent()
+
+          expectNoEvents()
+          coVerify(exactly = 0) { repository.search(any()) }
+          cancelAndIgnoreRemainingEvents()
+        }
       }
 
   @Test
-  fun `does not search until the debounce elapses`() =
-      runTest(dispatcher) {
-        collectStates()
+  fun `GIVEN the user types quickly WHEN the debounce elapses THEN only the last query is searched`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Success(queenTracks)
 
-        type("queen", thenWait = SearchViewModel.DEBOUNCE_MILLIS - 1)
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
 
-        assertTrue(repository.receivedQueries.isEmpty())
+          viewModel.onQueryChange("q")
+          advanceTimeBy(100)
+          viewModel.onQueryChange("qu")
+          advanceTimeBy(100)
+          viewModel.onQueryChange("queen")
+
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
+        }
+
+        coVerify(exactly = 1) { repository.search("queen") }
+        confirmVerified(repository)
       }
 
   @Test
-  fun `typing quickly only searches the last query`() =
-      runTest(dispatcher) {
-        collectStates()
+  fun `GIVEN a slow search WHEN it completes THEN shows Loading and then the Content`() =
+      coroutinesRule.runTest {
+        val gate = CompletableDeferred<SearchResult>()
+        coEvery { repository.search("queen") } coAnswers { gate.await() }
 
-        type("q", thenWait = 100)
-        type("qu", thenWait = 100)
-        type("queen")
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
 
-        assertEquals(listOf("queen"), repository.receivedQueries)
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          advanceTimeBy(SearchViewModel.DEBOUNCE_MILLIS)
+          runCurrent()
+          expectNoEvents()
+
+          gate.complete(SearchResult.Success(queenTracks))
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
+        }
       }
 
   @Test
-  fun `shows Loading while searching and then the Content`() =
-      runTest(dispatcher) {
-        val gate = repository.hold("queen")
-        val states = collectStates()
+  fun `GIVEN earlier results WHEN the user keeps typing THEN Loading replaces them at once`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Success(queenTracks)
+        coEvery { repository.search("queens") } returns SearchResult.Empty
 
-        type("queen")
-        assertEquals(SearchUiState.Loading, states.last())
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
 
-        gate.complete(SearchResult.Success(queenTracks))
+          viewModel.onQueryChange("queens")
+
+          assertEquals(SearchUiState.Loading, awaitItem())
+          cancelAndIgnoreRemainingEvents()
+        }
+      }
+
+  @Test
+  fun `GIVEN a typed query WHEN the search action is used THEN it searches without the debounce`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Success(queenTracks)
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+
+          viewModel.onQueryChange("queen")
+          viewModel.onSearch()
+
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
+          assertEquals(0L, testScheduler.currentTime)
+        }
+
+        coVerify(exactly = 1) { repository.search("queen") }
+        confirmVerified(repository)
+      }
+
+  @Test
+  fun `GIVEN a failed search WHEN the search action is used THEN it retries`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returnsMany
+            listOf(SearchResult.Error(IOException("offline")), SearchResult.Success(queenTracks))
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Error, awaitItem())
+
+          viewModel.onSearch()
+
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
+        }
+
+        coVerify(exactly = 2) { repository.search("queen") }
+        confirmVerified(repository)
+      }
+
+  @Test
+  fun `GIVEN a blank query WHEN the search action is used THEN it stays Idle`() =
+      coroutinesRule.runTest {
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+
+          viewModel.onSearch()
+          runCurrent()
+
+          expectNoEvents()
+        }
+
+        confirmVerified(repository)
+      }
+
+  @Test
+  fun `GIVEN a search in flight WHEN a new query is typed THEN the old results are never emitted`() =
+      coroutinesRule.runTest {
+        val staleGate = CompletableDeferred<SearchResult>()
+        coEvery { repository.search("queen") } coAnswers { staleGate.await() }
+        coEvery { repository.search("bowie") } returns SearchResult.Success(bowieTracks)
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          advanceTimeBy(SearchViewModel.DEBOUNCE_MILLIS)
+          runCurrent()
+
+          viewModel.onQueryChange("bowie")
+          staleGate.complete(SearchResult.Success(queenTracks))
+
+          assertEquals(SearchUiState.Content(bowieTracks), awaitItem())
+          expectNoEvents()
+        }
+      }
+
+  @Test
+  fun `GIVEN results on screen WHEN the screen is left and comes back THEN the search is not repeated`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Success(queenTracks)
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
+        }
+        advanceTimeBy(AWAY_FROM_SCREEN_MILLIS)
         runCurrent()
-        assertEquals(SearchUiState.Content(queenTracks), states.last())
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
+          advanceTimeBy(SearchViewModel.DEBOUNCE_MILLIS)
+          runCurrent()
+          expectNoEvents()
+        }
+
+        coVerify(exactly = 1) { repository.search("queen") }
+        confirmVerified(repository)
       }
 
   @Test
-  fun `typing shows Loading at once so earlier results are not left next to the new text`() =
-      runTest(dispatcher) {
-        repository.results["queen"] = SearchResult.Success(queenTracks)
-        val states = collectStates()
-        type("queen")
+  fun `GIVEN a failed search WHEN the screen is left and comes back THEN it is not retried`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Error(IOException("offline"))
 
-        viewModel.onQueryChange("queens")
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Error, awaitItem())
+        }
+        advanceTimeBy(AWAY_FROM_SCREEN_MILLIS)
         runCurrent()
 
-        assertEquals(SearchUiState.Loading, states.last())
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Error, awaitItem())
+          advanceTimeBy(SearchViewModel.DEBOUNCE_MILLIS)
+          runCurrent()
+          expectNoEvents()
+        }
+
+        coVerify(exactly = 1) { repository.search("queen") }
+        confirmVerified(repository)
       }
 
   @Test
-  fun `the search action searches without waiting for the debounce`() =
-      runTest(dispatcher) {
-        repository.results["queen"] = SearchResult.Success(queenTracks)
-        val states = collectStates()
+  fun `GIVEN no results WHEN searching THEN shows Empty`() = coroutinesRule.runTest {
+    coEvery { repository.search("zzzz") } returns SearchResult.Empty
 
-        viewModel.onQueryChange("queen")
-        viewModel.onSearch()
-        runCurrent()
+    viewModel.uiState.test {
+      assertEquals(SearchUiState.Idle, awaitItem())
 
-        assertEquals(listOf("queen"), repository.receivedQueries)
-        assertEquals(SearchUiState.Content(queenTracks), states.last())
-      }
+      viewModel.onQueryChange("zzzz")
 
-  @Test
-  fun `the search action retries a failed search`() =
-      runTest(dispatcher) {
-        repository.results["queen"] = SearchResult.Error(IOException("offline"))
-        val states = collectStates()
-        type("queen")
-        repository.results["queen"] = SearchResult.Success(queenTracks)
-
-        viewModel.onSearch()
-        runCurrent()
-
-        assertEquals(SearchUiState.Content(queenTracks), states.last())
-      }
+      assertEquals(SearchUiState.Loading, awaitItem())
+      assertEquals(SearchUiState.Empty, awaitItem())
+    }
+  }
 
   @Test
-  fun `the search action with a blank query stays Idle`() =
-      runTest(dispatcher) {
-        val states = collectStates()
+  fun `GIVEN a failing search WHEN searching THEN shows Error`() = coroutinesRule.runTest {
+    coEvery { repository.search("queen") } returns SearchResult.Error(IOException("offline"))
 
-        viewModel.onSearch()
-        runCurrent()
+    viewModel.uiState.test {
+      assertEquals(SearchUiState.Idle, awaitItem())
 
-        assertEquals(SearchUiState.Idle, states.last())
-        assertTrue(repository.receivedQueries.isEmpty())
-      }
+      viewModel.onQueryChange("queen")
 
-  @Test
-  fun `a cancelled search never emits its results`() =
-      runTest(dispatcher) {
-        val staleGate = repository.hold("queen")
-        repository.results["bowie"] = SearchResult.Success(bowieTracks)
-        val states = collectStates()
-
-        type("queen")
-        type("bowie")
-        staleGate.complete(SearchResult.Success(queenTracks))
-        runCurrent()
-
-        assertTrue(states.none { it == SearchUiState.Content(queenTracks) })
-        assertEquals(SearchUiState.Content(bowieTracks), states.last())
-      }
+      assertEquals(SearchUiState.Loading, awaitItem())
+      assertEquals(SearchUiState.Error, awaitItem())
+    }
+  }
 
   @Test
-  fun `no results show Empty`() =
-      runTest(dispatcher) {
-        repository.results["zzzz"] = SearchResult.Empty
-        val states = collectStates()
+  fun `GIVEN results on screen WHEN the query is cleared THEN goes back to Idle`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Success(queenTracks)
 
-        type("zzzz")
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Content(queenTracks), awaitItem())
 
-        assertEquals(SearchUiState.Empty, states.last())
+          viewModel.onQueryChange("")
+
+          assertEquals(SearchUiState.Idle, awaitItem())
+        }
       }
 
-  @Test
-  fun `a failed search shows Error`() =
-      runTest(dispatcher) {
-        repository.results["queen"] = SearchResult.Error(IOException("offline"))
-        val states = collectStates()
-
-        type("queen")
-
-        assertEquals(SearchUiState.Error, states.last())
-      }
-
-  @Test
-  fun `clearing the query goes back to Idle`() =
-      runTest(dispatcher) {
-        repository.results["queen"] = SearchResult.Success(queenTracks)
-        val states = collectStates()
-
-        type("queen")
-        type("")
-
-        assertEquals(SearchUiState.Idle, states.last())
-      }
+  private companion object {
+    /** Longer than the time the old ViewModel kept its search alive without subscribers. */
+    const val AWAY_FROM_SCREEN_MILLIS = 10_000L
+  }
 }

@@ -1,12 +1,12 @@
 package com.plexus.iberiamusic.data.remote
 
+import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import okhttp3.MediaType.Companion.toMediaType
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
