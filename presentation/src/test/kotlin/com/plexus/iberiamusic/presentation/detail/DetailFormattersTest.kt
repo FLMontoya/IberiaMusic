@@ -1,5 +1,6 @@
 package com.plexus.iberiamusic.presentation.detail
 
+import java.time.LocalDate
 import java.util.Locale
 import kotlin.test.assertEquals
 import org.junit.Test
@@ -32,25 +33,15 @@ class DetailFormattersTest {
   }
 
   @Test
-  fun `formats an ISO release date for the given locale`() {
-    assertEquals("October 31, 1975", formatReleaseDate("1975-10-31T07:00:00Z", Locale.US))
+  fun `formats a release date for the given locale`() {
+    assertEquals("October 31, 1975", formatReleaseDate(LocalDate.of(1975, 10, 31), Locale.US))
   }
 
   @Test
-  fun `falls back to the original text when the date cannot be parsed`() {
-    assertEquals("someday", formatReleaseDate("someday", Locale.US))
-  }
-
-  @Test
-  fun `asks iTunes for a larger artwork than the thumbnail`() {
+  fun `formats the same release date differently in another locale`() {
     assertEquals(
-        "https://is1.mzstatic.com/image/thumb/Music/a/600x600bb.jpg",
-        largeArtworkUrl("https://is1.mzstatic.com/image/thumb/Music/a/100x100bb.jpg"),
+        "31 de octubre de 1975",
+        formatReleaseDate(LocalDate.of(1975, 10, 31), Locale("es", "ES")),
     )
-  }
-
-  @Test
-  fun `keeps an artwork url that has no size to replace`() {
-    assertEquals("https://example.com/cover.jpg", largeArtworkUrl("https://example.com/cover.jpg"))
   }
 }

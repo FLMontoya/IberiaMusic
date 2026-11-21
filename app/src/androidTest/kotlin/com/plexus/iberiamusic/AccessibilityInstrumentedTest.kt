@@ -38,6 +38,7 @@ import com.plexus.iberiamusic.presentation.search.SearchViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
 import java.io.IOException
+import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Before
 import org.junit.Rule
@@ -61,7 +62,7 @@ class AccessibilityInstrumentedTest {
           albumName = "A Night at the Opera",
           genre = "Rock",
           durationMillis = 354_000L,
-          releaseDate = "1975-10-31T07:00:00Z",
+          releaseDate = LocalDate.of(1975, 10, 31),
       )
 
   @Before
