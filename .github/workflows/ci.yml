@@ -33,10 +33,19 @@ jobs:
       - name: Check formatting and run unit tests
         run: ./gradlew ktfmtCheck test --stacktrace
 
-      - name: Upload test reports
+      - name: Run lint
+        run: ./gradlew lintDebug --stacktrace
+
+      # Catches what only shows up with R8 on (the debug build does not shrink or optimize).
+      - name: Assemble the release build
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Upload test and lint reports
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: "**/build/reports/tests/"
+          name: reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/lint-results-*.html
           if-no-files-found: ignore
