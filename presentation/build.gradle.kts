@@ -1,7 +1,10 @@
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
+
 plugins {
   alias(libs.plugins.android.library)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.ktfmt)
+  jacoco
 }
 
 android {
@@ -15,7 +18,23 @@ android {
     targetCompatibility = JavaVersion.VERSION_11
   }
 
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+  buildTypes { debug { enableUnitTestCoverage = true } }
+
+  testCoverage { jacocoVersion = libs.versions.jacoco.get() }
+
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      all { test ->
+        // Robolectric loads the classes in its own classloader, without a code source: JaCoCo
+        // skips them unless asked, and the Compose screens would show as untested.
+        test.extensions.configure<JacocoTaskExtension> {
+          isIncludeNoLocationClasses = true
+          excludes = listOf("jdk.internal.*")
+        }
+      }
+    }
+  }
 }
 
 dependencies {

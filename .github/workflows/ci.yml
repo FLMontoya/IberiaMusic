@@ -33,6 +33,51 @@ jobs:
       - name: Check formatting and run unit tests
         run: ./gradlew ktfmtCheck test --stacktrace
 
+      # The unit tests already ran with coverage on; this only builds the reports.
+      - name: Build the coverage reports
+        run: ./gradlew coverage --stacktrace
+
+      - name: Summarize the coverage
+        run: |
+          python3 - >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import xml.etree.ElementTree as ET
+
+          reports = {
+              "domain": "domain/build/reports/jacoco/test/jacocoTestReport.xml",
+              "data": "data/build/reports/jacoco/test/jacocoTestReport.xml",
+              "presentation": "presentation/build/reports/coverage/test/debug/report.xml",
+          }
+          totals = {"LINE": [0, 0], "BRANCH": [0, 0]}
+          print("## Unit test coverage (JaCoCo)\n")
+          print("| Module | Lines | Branches |")
+          print("|---|---|---|")
+          for module, path in reports.items():
+              counters = {
+                  c.get("type"): (int(c.get("covered")), int(c.get("missed")))
+                  for c in ET.parse(path).getroot().findall("counter")
+              }
+              cells = []
+              for kind in ("LINE", "BRANCH"):
+                  covered, missed = counters.get(kind, (0, 0))
+                  totals[kind][0] += covered
+                  totals[kind][1] += missed
+                  total = covered + missed
+                  cells.append(f"{100 * covered / total:.1f}% ({covered}/{total})" if total else "-")
+              print(f"| {module} | {cells[0]} | {cells[1]} |")
+          cells = [f"{100 * c / (c + m):.1f}% ({c}/{c + m})" for c, m in totals.values()]
+          print(f"| **Total** | **{cells[0]}** | **{cells[1]}** |")
+          PY
+
+      - name: Upload the coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            domain/build/reports/jacoco/test/html/
+            data/build/reports/jacoco/test/html/
+            presentation/build/reports/coverage/test/debug/
+          if-no-files-found: error
+
       - name: Run lint
         run: ./gradlew lintDebug --stacktrace
 

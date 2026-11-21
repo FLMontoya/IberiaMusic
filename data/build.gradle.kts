@@ -4,6 +4,19 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.ktfmt)
+  jacoco
+}
+
+jacoco { toolVersion = libs.versions.jacoco.get() }
+
+tasks.test { finalizedBy(tasks.jacocoTestReport) }
+
+tasks.jacocoTestReport {
+  dependsOn(tasks.test)
+  reports {
+    xml.required = true
+    html.required = true
+  }
 }
 
 java {

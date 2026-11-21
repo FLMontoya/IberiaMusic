@@ -6,3 +6,13 @@ plugins {
   alias(libs.plugins.kotlin.serialization) apply false
   alias(libs.plugins.kotlin.compose) apply false
 }
+
+tasks.register("coverage") {
+  group = "verification"
+  description = "Runs the unit tests and builds the JaCoCo coverage report of each module."
+  dependsOn(
+      ":domain:jacocoTestReport",
+      ":data:jacocoTestReport",
+      ":presentation:createDebugUnitTestCoverageReport",
+  )
+}

@@ -56,8 +56,10 @@ lanzamiento, junto con la carátula; los campos que iTunes no devuelve se muestr
 ```bash
 ./gradlew assembleDebug        # compila la app
 ./gradlew installDebug         # la instala en un dispositivo o emulador (API 26+)
+./gradlew installStaging       # la build de release (con R8), firmada con la clave debug, junto a la debug
 ./gradlew ktfmtCheck test      # formato y tests unitarios (lo mismo que ejecuta el CI)
 ./gradlew ktfmtFormat          # aplica el formato
+./gradlew coverage             # tests unitarios + informes de cobertura de JaCoCo
 ./gradlew connectedDebugAndroidTest  # tests de instrumentación de accesibilidad (necesita un emulador)
 ```
 
@@ -68,6 +70,10 @@ Pasos desde cero:
 1. Clona el repositorio: `git clone https://github.com/FLMontoya/IberiaMusic.git`.
 2. Ábrelo en Android Studio y deja que sincronice Gradle, o usa la línea de comandos.
 3. Arranca un emulador (API 26 o superior) o conecta un dispositivo y ejecuta `installDebug`.
+
+`staging` sirve para probar la app tal como sale en release (R8 activo) sin sustituir la debug: usa
+el paquete `com.plexus.iberiamusic.staging`. Está firmada con la clave debug, así que no sirve para
+publicar; el CI compila `release` sin firmar.
 
 El Gradle daemon pide JDK 25 (`gradle/gradle-daemon-jvm.properties`), que el CI también usa.
 
@@ -182,7 +188,24 @@ En un dispositivo o emulador, `./gradlew connectedDebugAndroidTest` ejecuta los 
 instrumentación de accesibilidad (`app/src/androidTest`): los chequeos automáticos del Accessibility
 Test Framework (áreas táctiles, contraste y etiquetas) sobre cada estado de las dos pantallas, la
 semántica para TalkBack, la fuente al 200 % y la navegación con el teclado. El CI no los ejecuta,
-porque no dispone de emulador: solo corre `ktfmtCheck` y `test`.
+porque no dispone de emulador: corre `ktfmtCheck`, `test`, la cobertura, `lintDebug` y
+`assembleRelease`.
+
+### Cobertura
+
+`./gradlew coverage` ejecuta los tests unitarios con JaCoCo y genera un informe por módulo:
+
+- `domain/build/reports/jacoco/test/html/index.html`
+- `data/build/reports/jacoco/test/html/index.html`
+- `presentation/build/reports/coverage/test/debug/index.html`
+
+Solo cuentan los tests unitarios: `app` no tiene (es el punto de entrada y el DI) y los tests de
+instrumentación no se miden. En `presentation`, Robolectric carga las clases en su propio
+classloader, así que `build.gradle.kts` activa `includeNoLocationClasses`; sin eso las pantallas
+Compose saldrían como no cubiertas aunque tengan tests.
+
+El CI publica un resumen (líneas y ramas por módulo) en la página de cada ejecución y sube el
+informe HTML como artefacto `coverage-report`. No hay un umbral mínimo que haga fallar el build.
 
 ## Capturas
 
