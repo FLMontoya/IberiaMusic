@@ -6,5 +6,7 @@ sealed interface SearchResult {
 
   data object Empty : SearchResult
 
-  data class Error(val cause: Throwable) : SearchResult
+  /** The search failed for [reason]; [cause] keeps the original exception for diagnosis. */
+  data class Error(val cause: Throwable, val reason: SearchFailure = SearchFailure.UNKNOWN) :
+      SearchResult
 }
