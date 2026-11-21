@@ -39,7 +39,9 @@ class SearchRepositoryImpl(
       throw cancellation
     } catch (failure: Exception) {
       val reason = failure.toSearchFailure()
-      errorLogger.log("Search failed ($reason)", failure)
+      // Android's Log leaves out the stack trace of an UnknownHostException (the usual "no network"
+      // failure), so the exception type goes in the line itself.
+      errorLogger.log("Search failed ($reason): ${failure.javaClass.simpleName}", failure)
       SearchResult.Error(failure, reason)
     }
   }

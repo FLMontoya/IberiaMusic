@@ -15,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import java.io.IOException
+import java.net.UnknownHostException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -164,6 +165,15 @@ class SearchRepositoryImplTest {
     repository.search("queen")
 
     verify(exactly = 1) { logger.log(match { "NETWORK" in it }, failure) }
+  }
+
+  @Test
+  fun `GIVEN a failure WHEN search THEN the log line names the exception type`() = runTest {
+    coEvery { api.search(any()) } throws UnknownHostException("itunes.apple.com")
+
+    repository.search("queen")
+
+    verify(exactly = 1) { logger.log(match { "UnknownHostException" in it }, any()) }
   }
 
   @Test
