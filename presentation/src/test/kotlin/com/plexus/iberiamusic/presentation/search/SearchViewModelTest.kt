@@ -235,6 +235,31 @@ class SearchViewModelTest {
       }
 
   @Test
+  fun `GIVEN a failed search WHEN the screen is left and comes back THEN it is not retried`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns SearchResult.Error(IOException("offline"))
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+          viewModel.onQueryChange("queen")
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Error, awaitItem())
+        }
+        advanceTimeBy(AWAY_FROM_SCREEN_MILLIS)
+        runCurrent()
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Error, awaitItem())
+          advanceTimeBy(SearchViewModel.DEBOUNCE_MILLIS)
+          runCurrent()
+          expectNoEvents()
+        }
+
+        coVerify(exactly = 1) { repository.search("queen") }
+        confirmVerified(repository)
+      }
+
+  @Test
   fun `GIVEN no results WHEN searching THEN shows Empty`() = coroutinesRule.runTest {
     coEvery { repository.search("zzzz") } returns SearchResult.Empty
 
