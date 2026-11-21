@@ -1,6 +1,7 @@
 package com.plexus.iberiamusic.presentation.search
 
 import app.cash.turbine.test
+import com.plexus.iberiamusic.domain.model.SearchFailure
 import com.plexus.iberiamusic.domain.model.SearchResult
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.domain.repository.SearchRepository
@@ -154,13 +155,16 @@ class SearchViewModelTest {
   fun `GIVEN a failed search WHEN the search action is used THEN it retries`() =
       coroutinesRule.runTest {
         coEvery { repository.search("queen") } returnsMany
-            listOf(SearchResult.Error(IOException("offline")), SearchResult.Success(queenTracks))
+            listOf(
+                SearchResult.Error(IOException("offline"), SearchFailure.NETWORK),
+                SearchResult.Success(queenTracks),
+            )
 
         viewModel.uiState.test {
           assertEquals(SearchUiState.Idle, awaitItem())
           viewModel.onQueryChange("queen")
           assertEquals(SearchUiState.Loading, awaitItem())
-          assertEquals(SearchUiState.Error, awaitItem())
+          assertEquals(SearchUiState.Error(SearchFailure.NETWORK), awaitItem())
 
           viewModel.onSearch()
 
@@ -237,19 +241,20 @@ class SearchViewModelTest {
   @Test
   fun `GIVEN a failed search WHEN the screen is left and comes back THEN it is not retried`() =
       coroutinesRule.runTest {
-        coEvery { repository.search("queen") } returns SearchResult.Error(IOException("offline"))
+        coEvery { repository.search("queen") } returns
+            SearchResult.Error(IOException("offline"), SearchFailure.NETWORK)
 
         viewModel.uiState.test {
           assertEquals(SearchUiState.Idle, awaitItem())
           viewModel.onQueryChange("queen")
           assertEquals(SearchUiState.Loading, awaitItem())
-          assertEquals(SearchUiState.Error, awaitItem())
+          assertEquals(SearchUiState.Error(SearchFailure.NETWORK), awaitItem())
         }
         advanceTimeBy(AWAY_FROM_SCREEN_MILLIS)
         runCurrent()
 
         viewModel.uiState.test {
-          assertEquals(SearchUiState.Error, awaitItem())
+          assertEquals(SearchUiState.Error(SearchFailure.NETWORK), awaitItem())
           advanceTimeBy(SearchViewModel.DEBOUNCE_MILLIS)
           runCurrent()
           expectNoEvents()
@@ -275,7 +280,8 @@ class SearchViewModelTest {
 
   @Test
   fun `GIVEN a failing search WHEN searching THEN shows Error`() = coroutinesRule.runTest {
-    coEvery { repository.search("queen") } returns SearchResult.Error(IOException("offline"))
+    coEvery { repository.search("queen") } returns
+        SearchResult.Error(IOException("offline"), SearchFailure.NETWORK)
 
     viewModel.uiState.test {
       assertEquals(SearchUiState.Idle, awaitItem())
@@ -283,9 +289,25 @@ class SearchViewModelTest {
       viewModel.onQueryChange("queen")
 
       assertEquals(SearchUiState.Loading, awaitItem())
-      assertEquals(SearchUiState.Error, awaitItem())
+      assertEquals(SearchUiState.Error(SearchFailure.NETWORK), awaitItem())
     }
   }
+
+  @Test
+  fun `GIVEN a failure of the service WHEN searching THEN the Error says it was the service`() =
+      coroutinesRule.runTest {
+        coEvery { repository.search("queen") } returns
+            SearchResult.Error(IllegalStateException("503"), SearchFailure.SERVER)
+
+        viewModel.uiState.test {
+          assertEquals(SearchUiState.Idle, awaitItem())
+
+          viewModel.onQueryChange("queen")
+
+          assertEquals(SearchUiState.Loading, awaitItem())
+          assertEquals(SearchUiState.Error(SearchFailure.SERVER), awaitItem())
+        }
+      }
 
   @Test
   fun `GIVEN results on screen WHEN the query is cleared THEN goes back to Idle`() =

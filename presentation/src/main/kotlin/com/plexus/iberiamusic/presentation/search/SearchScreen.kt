@@ -1,5 +1,6 @@
 package com.plexus.iberiamusic.presentation.search
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -50,6 +51,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.plexus.iberiamusic.domain.model.SearchFailure
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaGreen
@@ -167,9 +169,9 @@ private fun SearchBody(
             stringResource(R.string.search_empty, query.trim()),
             LiveRegionMode.Polite,
         )
-    SearchUiState.Error -> {
+    is SearchUiState.Error -> {
       StatusMessage(
-          text = stringResource(R.string.search_error),
+          text = stringResource(uiState.reason.messageRes()),
           liveRegionMode = LiveRegionMode.Assertive,
           color = MaterialTheme.colorScheme.error,
           icon = Icons.Filled.Warning,
@@ -185,6 +187,15 @@ private fun SearchBody(
         }
   }
 }
+
+/** What the user is told for each kind of failure: only a network problem blames the connection. */
+@StringRes
+private fun SearchFailure.messageRes(): Int =
+    when (this) {
+      SearchFailure.NETWORK -> R.string.search_error_network
+      SearchFailure.SERVER -> R.string.search_error_server
+      SearchFailure.UNKNOWN -> R.string.search_error_unknown
+    }
 
 @Composable
 private fun StatusMessage(

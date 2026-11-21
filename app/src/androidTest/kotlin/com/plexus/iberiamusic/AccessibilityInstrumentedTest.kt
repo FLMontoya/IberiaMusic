@@ -28,6 +28,7 @@ import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Density
 import androidx.test.platform.app.InstrumentationRegistry
+import com.plexus.iberiamusic.domain.model.SearchFailure
 import com.plexus.iberiamusic.domain.model.SearchResult
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.domain.repository.SearchRepository
@@ -154,11 +155,13 @@ class AccessibilityInstrumentedTest {
 
   @Test
   fun errorStateIsAnnouncedAssertivelyAndOffersARetryOfAtLeast48dp() {
-    show(SearchResult.Error(IOException("offline")))
+    show(SearchResult.Error(IOException("offline"), SearchFailure.NETWORK))
 
-    searchFor("queen", string(R.string.search_error))
+    searchFor("queen", string(R.string.search_error_network))
 
-    rule.onNodeWithText(string(R.string.search_error)).assert(liveRegion(LiveRegionMode.Assertive))
+    rule
+        .onNodeWithText(string(R.string.search_error_network))
+        .assert(liveRegion(LiveRegionMode.Assertive))
     rule
         .onNode(hasClickAction() and hasText(string(R.string.search_retry)))
         .assertTouchTargetIsAtLeast48dp()
