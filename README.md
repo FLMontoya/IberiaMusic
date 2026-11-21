@@ -91,8 +91,8 @@ app ──▶ presentation ──▶ domain ◀── data ◀── app
 |----------------|-----------------|--------------------------------------------------------------------|
 | `domain`       | Kotlin/JVM      | `Track`, `SearchResult`, `SearchRepository`, `SearchTracksUseCase` |
 | `data`         | Kotlin/JVM      | API Retrofit, DTOs, mappers, caché en memoria, repositorio         |
-| `presentation` | Android library | `SearchViewModel`, `SearchUiState`, pantallas Compose y tema       |
-| `app`          | Application     | Inyección manual de dependencias y navegación                      |
+| `presentation` | Android library | `SearchViewModel`, `SearchUiState`, pantallas, tema y navegación   |
+| `app`          | Application     | Inyección manual de dependencias, `MainActivity` y `Application`  |
 
 `app` depende de los otros tres; `presentation` y `data` solo dependen de `domain`; `domain` no
 depende de nadie y `presentation` nunca depende de `data`. No se usa Hilt: el `AppContainer` de
@@ -175,9 +175,8 @@ para las aserciones. Se ejecutan en JVM con `./gradlew test`:
 - `domain`: caso de uso con el repositorio simulado con MockK.
 - `data`: caché (acierto, fallo y expiración), mapper, repositorio (con caché válida no llama a
   la red; con caché expirada, refresca) y contrato de `ITunesApi` contra un `MockWebServer`.
-- `presentation`: ViewModel (debounce, cancelación y reintento, con Turbine) y semantics de las
-  pantallas con Robolectric.
-- `app`: navegación búsqueda → detalle y guardado de la canción seleccionada.
+- `presentation`: ViewModel (debounce, cancelación y reintento, con Turbine), semantics de las
+  pantallas, navegación búsqueda → detalle y guardado de la canción seleccionada, con Robolectric.
 
 En un dispositivo o emulador, `./gradlew connectedDebugAndroidTest` ejecuta los tests de
 instrumentación de accesibilidad (`app/src/androidTest`): los chequeos automáticos del Accessibility
