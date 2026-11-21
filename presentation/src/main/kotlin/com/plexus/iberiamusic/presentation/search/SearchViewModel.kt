@@ -33,14 +33,15 @@ class SearchViewModel(private val searchTracks: SearchTracksUseCase) : ViewModel
   private val request = MutableStateFlow(Request(""))
   private var searchCount = 0
 
+  /**
+   * Starts with the first subscriber and then lives as long as the ViewModel. Stopping it while
+   * nobody listens would make [flatMapLatest] run the last request again on return: a new
+   * [SearchUiState.Loading] flash, and a failed search retried without the user asking.
+   */
   val uiState: StateFlow<SearchUiState> =
       request
           .flatMapLatest { search(it) }
-          .stateIn(
-              viewModelScope,
-              SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-              SearchUiState.Idle,
-          )
+          .stateIn(viewModelScope, SharingStarted.Lazily, SearchUiState.Idle)
 
   fun onQueryChange(text: String) {
     _query.value = text
@@ -71,6 +72,5 @@ class SearchViewModel(private val searchTracks: SearchTracksUseCase) : ViewModel
 
   companion object {
     const val DEBOUNCE_MILLIS = 300L
-    private const val STOP_TIMEOUT_MILLIS = 5_000L
   }
 }
