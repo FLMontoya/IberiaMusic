@@ -26,6 +26,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import com.plexus.iberiamusic.domain.model.SearchFailure
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.presentation.R
 import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
@@ -162,18 +163,48 @@ class SearchScreenTest {
 
   @Test
   fun `error state is announced assertively`() {
-    show(SearchUiState.Error)
+    show(SearchUiState.Error(SearchFailure.NETWORK))
 
     rule
-        .onNodeWithText(string(R.string.search_error))
+        .onNodeWithText(string(R.string.search_error_network))
         .assert(
             SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Assertive),
         )
   }
 
   @Test
+  fun `a network failure tells the user to check the connection`() {
+    show(SearchUiState.Error(SearchFailure.NETWORK))
+
+    rule.onNodeWithText(string(R.string.search_error_network)).assertIsDisplayed()
+    rule.onNodeWithText(string(R.string.search_error_server)).assertDoesNotExist()
+  }
+
+  @Test
+  fun `a server failure blames the service and not the connection`() {
+    show(SearchUiState.Error(SearchFailure.SERVER))
+
+    rule.onNodeWithText(string(R.string.search_error_server)).assertIsDisplayed()
+    rule.onNodeWithText(string(R.string.search_error_network)).assertDoesNotExist()
+  }
+
+  @Test
+  fun `an unknown failure gives a generic message`() {
+    show(SearchUiState.Error(SearchFailure.UNKNOWN))
+
+    rule.onNodeWithText(string(R.string.search_error_unknown)).assertIsDisplayed()
+  }
+
+  @Test
+  fun `every kind of failure still offers to retry`() {
+    show(SearchUiState.Error(SearchFailure.SERVER))
+
+    rule.onNode(hasClickAction() and hasText(string(R.string.search_retry))).assertIsDisplayed()
+  }
+
+  @Test
   fun `retry button is shown in the error state`() {
-    show(SearchUiState.Error)
+    show(SearchUiState.Error(SearchFailure.NETWORK))
 
     rule.onNode(hasClickAction() and hasText(string(R.string.search_retry))).assertIsDisplayed()
   }
@@ -188,7 +219,7 @@ class SearchScreenTest {
   @Test
   fun `retry button reports a search and meets the minimum touch target`() {
     val onSearch = mockk<() -> Unit>(relaxed = true)
-    show(SearchUiState.Error, query = "queen", onSearch = onSearch)
+    show(SearchUiState.Error(SearchFailure.NETWORK), query = "queen", onSearch = onSearch)
 
     val retry = rule.onNode(hasClickAction() and hasText(string(R.string.search_retry)))
     retry.assertHeightIsAtLeast(48.dp).assertWidthIsAtLeast(48.dp)
@@ -200,10 +231,10 @@ class SearchScreenTest {
 
   @Test
   fun `error message stays an assertive live region next to the retry button`() {
-    show(SearchUiState.Error)
+    show(SearchUiState.Error(SearchFailure.NETWORK))
 
     rule
-        .onNodeWithText(string(R.string.search_error))
+        .onNodeWithText(string(R.string.search_error_network))
         .assert(
             SemanticsMatcher.expectValue(SemanticsProperties.LiveRegion, LiveRegionMode.Assertive),
         )

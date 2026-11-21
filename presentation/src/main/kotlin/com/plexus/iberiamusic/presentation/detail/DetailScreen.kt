@@ -33,9 +33,9 @@ fun DetailScreen(track: Track, onBack: () -> Unit, modifier: Modifier = Modifier
   Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp)) {
     TextButton(onClick = onBack) { Text(stringResource(R.string.detail_back)) }
     Spacer(Modifier.size(8.dp))
-    track.artworkUrl?.let { url ->
+    (track.largeArtworkUrl ?: track.artworkUrl)?.let { url ->
       AsyncImage(
-          model = largeArtworkUrl(url),
+          model = url,
           contentDescription = stringResource(R.string.detail_artwork, track.name),
           modifier =
               Modifier.size(ARTWORK_SIZE)

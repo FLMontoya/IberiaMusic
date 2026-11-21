@@ -8,6 +8,7 @@ import com.plexus.iberiamusic.data.remote.ITunesApi
 import com.plexus.iberiamusic.data.repository.SearchRepositoryImpl
 import com.plexus.iberiamusic.domain.repository.SearchRepository
 import com.plexus.iberiamusic.domain.usecase.SearchTracksUseCase
+import com.plexus.iberiamusic.logging.AndroidErrorLogger
 import com.plexus.iberiamusic.presentation.search.SearchViewModel
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -32,7 +33,8 @@ class AppContainer {
           .build()
           .create(ITunesApi::class.java)
 
-  private val repository: SearchRepository = SearchRepositoryImpl(api, InMemorySearchCache())
+  private val repository: SearchRepository =
+      SearchRepositoryImpl(api, InMemorySearchCache(), AndroidErrorLogger)
 
   private val searchTracks = SearchTracksUseCase(repository)
 

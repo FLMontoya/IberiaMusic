@@ -28,6 +28,7 @@ import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Density
 import androidx.test.platform.app.InstrumentationRegistry
+import com.plexus.iberiamusic.domain.model.SearchFailure
 import com.plexus.iberiamusic.domain.model.SearchResult
 import com.plexus.iberiamusic.domain.model.Track
 import com.plexus.iberiamusic.domain.repository.SearchRepository
@@ -38,6 +39,7 @@ import com.plexus.iberiamusic.presentation.search.SearchViewModel
 import io.mockk.coEvery
 import io.mockk.mockk
 import java.io.IOException
+import java.time.LocalDate
 import kotlinx.coroutines.CompletableDeferred
 import org.junit.Before
 import org.junit.Rule
@@ -61,7 +63,7 @@ class AccessibilityInstrumentedTest {
           albumName = "A Night at the Opera",
           genre = "Rock",
           durationMillis = 354_000L,
-          releaseDate = "1975-10-31T07:00:00Z",
+          releaseDate = LocalDate.of(1975, 10, 31),
       )
 
   @Before
@@ -153,11 +155,13 @@ class AccessibilityInstrumentedTest {
 
   @Test
   fun errorStateIsAnnouncedAssertivelyAndOffersARetryOfAtLeast48dp() {
-    show(SearchResult.Error(IOException("offline")))
+    show(SearchResult.Error(IOException("offline"), SearchFailure.NETWORK))
 
-    searchFor("queen", string(R.string.search_error))
+    searchFor("queen", string(R.string.search_error_network))
 
-    rule.onNodeWithText(string(R.string.search_error)).assert(liveRegion(LiveRegionMode.Assertive))
+    rule
+        .onNodeWithText(string(R.string.search_error_network))
+        .assert(liveRegion(LiveRegionMode.Assertive))
     rule
         .onNode(hasClickAction() and hasText(string(R.string.search_retry)))
         .assertTouchTargetIsAtLeast48dp()

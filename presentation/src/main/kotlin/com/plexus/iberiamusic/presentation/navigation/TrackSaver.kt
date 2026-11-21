@@ -3,6 +3,8 @@ package com.plexus.iberiamusic.presentation.navigation
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import com.plexus.iberiamusic.domain.model.Track
+import java.time.DateTimeException
+import java.time.LocalDate
 
 /**
  * Keeps the selected [Track] across process death, so the detail screen can be restored along with
@@ -23,7 +25,8 @@ internal fun saveTrack(track: Track?): List<Any?> =
           track.artworkUrl,
           track.genre,
           track.durationMillis,
-          track.releaseDate,
+          track.releaseDate?.toEpochDay(),
+          track.largeArtworkUrl,
       )
     }
 
@@ -36,6 +39,15 @@ internal fun restoreTrack(saved: List<Any?>): Track? {
       artworkUrl = saved.getOrNull(4) as? String,
       genre = saved.getOrNull(5) as? String,
       durationMillis = saved.getOrNull(6) as? Long,
-      releaseDate = saved.getOrNull(7) as? String,
+      releaseDate = (saved.getOrNull(7) as? Long)?.toLocalDateOrNull(),
+      largeArtworkUrl = saved.getOrNull(8) as? String,
   )
 }
+
+/** The date is saved as an epoch day; a corrupt value out of range gives null, not a crash. */
+private fun Long.toLocalDateOrNull(): LocalDate? =
+    try {
+      LocalDate.ofEpochDay(this)
+    } catch (_: DateTimeException) {
+      null
+    }

@@ -3,6 +3,7 @@ package com.plexus.iberiamusic.data.remote.mapper
 import com.plexus.iberiamusic.data.remote.dto.ITunesSearchResponseDto
 import com.plexus.iberiamusic.data.remote.dto.ITunesTrackDto
 import com.plexus.iberiamusic.domain.model.Track
+import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlinx.serialization.json.Json
@@ -33,12 +34,63 @@ class ITunesMapperTest {
             artistName = "Queen",
             albumName = "A Night at the Opera",
             artworkUrl = "https://example.com/art.jpg",
+            largeArtworkUrl = "https://example.com/art.jpg",
             genre = "Rock",
             durationMillis = 354_000L,
-            releaseDate = "1975-10-31T07:00:00Z",
+            releaseDate = LocalDate.of(1975, 10, 31),
         ),
         track,
     )
+  }
+
+  @Test
+  fun `keeps the day of an ISO timestamp as the release date`() {
+    val track = fullDto.copy(releaseDate = "2020-01-01T08:00:00Z").toTrack()
+
+    assertEquals(LocalDate.of(2020, 1, 1), track?.releaseDate)
+  }
+
+  @Test
+  fun `accepts a release date that is only a day`() {
+    val track = fullDto.copy(releaseDate = "1999-12-31").toTrack()
+
+    assertEquals(LocalDate.of(1999, 12, 31), track?.releaseDate)
+  }
+
+  @Test
+  fun `drops a release date that cannot be parsed but keeps the track`() {
+    val track = fullDto.copy(releaseDate = "someday").toTrack()
+
+    assertNull(track?.releaseDate)
+    assertEquals("Bohemian Rhapsody", track?.name)
+  }
+
+  @Test
+  fun `asks iTunes for a bigger cover by changing the size in the url`() {
+    val thumbnail = "https://is1.mzstatic.com/image/thumb/Music/a/100x100bb.jpg"
+
+    val track = fullDto.copy(artworkUrl100 = thumbnail).toTrack()
+
+    assertEquals(thumbnail, track?.artworkUrl)
+    assertEquals(
+        "https://is1.mzstatic.com/image/thumb/Music/a/600x600bb.jpg",
+        track?.largeArtworkUrl,
+    )
+  }
+
+  @Test
+  fun `keeps the same cover url when it carries no size to change`() {
+    val track = fullDto.copy(artworkUrl100 = "https://example.com/cover.jpg").toTrack()
+
+    assertEquals("https://example.com/cover.jpg", track?.largeArtworkUrl)
+  }
+
+  @Test
+  fun `has no cover urls when the dto has no artwork`() {
+    val track = fullDto.copy(artworkUrl100 = null).toTrack()
+
+    assertNull(track?.artworkUrl)
+    assertNull(track?.largeArtworkUrl)
   }
 
   @Test
@@ -97,9 +149,10 @@ class ITunesMapperTest {
             artistName = "Artist",
             albumName = "Album",
             artworkUrl = "https://example.com/a.jpg",
+            largeArtworkUrl = "https://example.com/a.jpg",
             genre = "Pop",
             durationMillis = 180_000L,
-            releaseDate = "2020-01-01T08:00:00Z",
+            releaseDate = LocalDate.of(2020, 1, 1),
         ),
         response.toTracks().single(),
     )
