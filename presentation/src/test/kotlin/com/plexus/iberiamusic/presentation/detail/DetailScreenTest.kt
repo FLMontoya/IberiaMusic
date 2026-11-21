@@ -23,6 +23,7 @@ import com.plexus.iberiamusic.presentation.theme.IberiaMusicTheme
 import io.mockk.confirmVerified
 import io.mockk.mockk
 import io.mockk.verify
+import java.time.LocalDate
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +42,7 @@ class DetailScreenTest {
           albumName = "A Night at the Opera",
           genre = "Rock",
           durationMillis = 354_000L,
-          releaseDate = "1975-10-31T07:00:00Z",
+          releaseDate = LocalDate.of(1975, 10, 31),
       )
 
   private fun string(id: Int) = rule.activity.getString(id)
@@ -81,7 +82,7 @@ class DetailScreenTest {
     rule.onNode(field(R.string.detail_genre, "Rock")).assertExists()
     rule.onNode(field(R.string.detail_duration, "5:54")).assertExists()
     rule
-        .onNode(field(R.string.detail_release_date, formatReleaseDate("1975-10-31T07:00:00Z")))
+        .onNode(field(R.string.detail_release_date, formatReleaseDate(LocalDate.of(1975, 10, 31))))
         .assertExists()
   }
 

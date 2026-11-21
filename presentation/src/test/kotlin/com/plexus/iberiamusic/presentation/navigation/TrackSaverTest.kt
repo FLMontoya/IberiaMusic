@@ -1,6 +1,7 @@
 package com.plexus.iberiamusic.presentation.navigation
 
 import com.plexus.iberiamusic.domain.model.Track
+import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import org.junit.Test
@@ -19,7 +20,7 @@ class TrackSaverTest {
             largeArtworkUrl = "https://example.com/art-large.jpg",
             genre = "Rock",
             durationMillis = 354_000L,
-            releaseDate = "1975-10-31T07:00:00Z",
+            releaseDate = LocalDate.of(1975, 10, 31),
         )
 
     assertEquals(track, restoreTrack(saveTrack(track)))
@@ -55,6 +56,24 @@ class TrackSaverTest {
     val track = Track(id = 5L, name = "Song", artistName = "Artist", genre = "Rock")
     val saved = saveTrack(track).toMutableList()
     saved[6] = "not a number"
+
+    assertEquals(track, restoreTrack(saved))
+  }
+
+  @Test
+  fun `a release date saved with the wrong type is dropped and the track is still restored`() {
+    val track = Track(id = 6L, name = "Song", artistName = "Artist")
+    val saved = saveTrack(track.copy(releaseDate = LocalDate.of(2020, 1, 1))).toMutableList()
+    saved[7] = "2020-01-01"
+
+    assertEquals(track, restoreTrack(saved))
+  }
+
+  @Test
+  fun `an impossible release date is dropped instead of crashing the restore`() {
+    val track = Track(id = 7L, name = "Song", artistName = "Artist")
+    val saved = saveTrack(track.copy(releaseDate = LocalDate.of(2020, 1, 1))).toMutableList()
+    saved[7] = Long.MAX_VALUE
 
     assertEquals(track, restoreTrack(saved))
   }
