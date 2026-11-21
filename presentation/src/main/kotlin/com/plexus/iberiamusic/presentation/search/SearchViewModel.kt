@@ -67,7 +67,7 @@ class SearchViewModel(private val searchTracks: SearchTracksUseCase) : ViewModel
       when (this) {
         is SearchResult.Success -> SearchUiState.Content(tracks)
         SearchResult.Empty -> SearchUiState.Empty
-        is SearchResult.Error -> SearchUiState.Error
+        is SearchResult.Error -> SearchUiState.Error(reason)
       }
 
   companion object {

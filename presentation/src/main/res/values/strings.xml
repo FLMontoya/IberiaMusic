@@ -6,7 +6,9 @@
     <string name="search_loading">Buscando…</string>
     <string name="search_empty">No hay resultados para «%1$s»</string>
     <string name="search_clear">Borrar búsqueda</string>
-    <string name="search_error">No se pudo completar la búsqueda. Comprueba tu conexión e inténtalo de nuevo.</string>
+    <string name="search_error_network">Sin conexión. Comprueba tu red e inténtalo de nuevo.</string>
+    <string name="search_error_server">El servicio de búsqueda no responde ahora. Inténtalo de nuevo más tarde.</string>
+    <string name="search_error_unknown">Algo salió mal con la búsqueda. Inténtalo de nuevo.</string>
     <string name="search_retry">Reintentar</string>
     <string name="track_open_detail">Ver detalle de la canción</string>
     <string name="track_subtitle">%1$s · %2$s</string>

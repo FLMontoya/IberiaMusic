@@ -1,5 +1,6 @@
 package com.plexus.iberiamusic.presentation.search
 
+import com.plexus.iberiamusic.domain.model.SearchFailure
 import com.plexus.iberiamusic.domain.model.Track
 
 /** Everything the search screen can be showing, exposed through a single state holder. */
@@ -13,5 +14,6 @@ sealed interface SearchUiState {
 
   data object Empty : SearchUiState
 
-  data object Error : SearchUiState
+  /** The search failed; [reason] decides what the user is told. */
+  data class Error(val reason: SearchFailure) : SearchUiState
 }
