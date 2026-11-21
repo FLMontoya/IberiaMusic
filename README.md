@@ -41,7 +41,8 @@ Android: `minSdk` 26, `targetSdk` y `compileSdk` 37. Las versiones están centra
 [iTunes Search API](https://itunes.apple.com/search?term=queen&media=music): pública y sin API key.
 Se consulta `search?term=...&media=music&entity=song&limit=50`, es decir, solo canciones y un
 máximo de 50 resultados. El detalle muestra nombre, artista, álbum, género, duración y fecha de
-lanzamiento, junto con la carátula; los campos que iTunes no devuelve se muestran con un guion («-»).
+lanzamiento, junto con la carátula; los campos que iTunes no devuelve, o que no se pueden
+interpretar (por ejemplo, una fecha ilegible), se muestran con un guion («-»).
 
 ## Cómo ejecutar
 
@@ -93,12 +94,12 @@ Cuatro módulos en la raíz, con esta regla de dependencias:
 app ──▶ presentation ──▶ domain ◀── data ◀── app
 ```
 
-| Módulo         | Tipo            | Contenido                                                          |
-|----------------|-----------------|--------------------------------------------------------------------|
-| `domain`       | Kotlin/JVM      | `Track`, `SearchResult`, `SearchRepository`, `SearchTracksUseCase` |
-| `data`         | Kotlin/JVM      | API Retrofit, DTOs, mappers, caché en memoria, repositorio         |
-| `presentation` | Android library | `SearchViewModel`, `SearchUiState`, pantallas, tema y navegación   |
-| `app`          | Application     | Inyección manual de dependencias, `MainActivity` y `Application`  |
+| Módulo         | Tipo            | Contenido                                                                              |
+|----------------|-----------------|----------------------------------------------------------------------------------------|
+| `domain`       | Kotlin/JVM      | `Track`, `SearchResult`, `SearchFailure`, `SearchRepository`, `ErrorLogger`, caso de uso |
+| `data`         | Kotlin/JVM      | API Retrofit, DTOs, mappers (carátula grande y fecha), caché en memoria, repositorio   |
+| `presentation` | Android library | `SearchViewModel`, `SearchUiState`, pantallas, tema y navegación                       |
+| `app`          | Application     | Inyección manual de dependencias, `MainActivity`, `Application` y el logger de Android |
 
 `app` depende de los otros tres; `presentation` y `data` solo dependen de `domain`; `domain` no
 depende de nadie y `presentation` nunca depende de `data`. No se usa Hilt: el `AppContainer` de
@@ -106,7 +107,9 @@ depende de nadie y `presentation` nunca depende de `data`. No se usa Hilt: el `A
 
 Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `SearchResult`
 (`Success`, `Empty` o `Error`) y la UI lo traduce a un `SearchUiState` (`Idle`, `Loading`,
-`Content`, `Empty` o `Error`) expuesto en un único `StateFlow`.
+`Content`, `Empty` o `Error`) expuesto en un único `StateFlow`. El `Error` lleva el motivo
+(`SearchFailure`: `NETWORK`, `SERVER` o `UNKNOWN`) y la excepción original, que se registra a través
+de `ErrorLogger`.
 
 ## Decisiones
 
@@ -138,6 +141,25 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
   reintentan la búsqueda.
 - No se guarda ningún `Job` a mano. `CancellationException` siempre se relanza, nunca se captura.
 
+### Errores
+
+- `SearchRepositoryImpl` clasifica la excepción: `IOException` (sin conexión, tiempo agotado) es
+  `NETWORK`; un error HTTP (`HttpException`) o una respuesta que no se puede decodificar
+  (`SerializationException`) es `SERVER`; cualquier otra cosa es `UNKNOWN`.
+- El mensaje depende del motivo: solo un fallo de red pide comprobar la conexión; el del servicio
+  dice que no responde y el desconocido es genérico. Los tres ofrecen «Reintentar».
+- Se captura cualquier `Exception`, no solo `IOException`: en una app de UI se prefiere mostrar el
+  error y registrarlo antes que cerrarla por algo inesperado. `CancellationException` se relanza
+  siempre y no se registra.
+- Cada fallo deja una línea en Logcat (etiqueta `IberiaMusic`, nivel `W`) con el motivo y el tipo de
+  la excepción, por ejemplo `Search failed (NETWORK): UnknownHostException`. El texto buscado no se
+  escribe en el log. El tipo va en la propia línea porque `Log` de Android omite la traza de las
+  `UnknownHostException`.
+- `ErrorLogger` es una interfaz del dominio y `AndroidErrorLogger` (en `app`) la implementa con
+  `Log.w`: así `domain` y `data` siguen sin depender de Android, y un servicio de informes de fallos
+  se enchufaría en un solo sitio.
+- Los errores no se cachean (ver [Caché](#caché)).
+
 ### Accesibilidad
 
 - Textos en `sp` y pantallas con scroll, comprobadas con la fuente al 200 %.
@@ -160,7 +182,13 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 ### Otras
 
 - Las carátulas se cargan con [Coil](https://coil-kt.github.io/coil/). La lista usa la miniatura de
-  100 px y el detalle pide la de 600 px cambiando el tamaño en la URL de iTunes.
+  100 px y el detalle la de 600 px. Que iTunes sirva otros tamaños al cambiar el tamaño en la URL es
+  un dato de la API, así que lo resuelve el mapper de `data` (`Track.artworkUrl` y
+  `Track.largeArtworkUrl`) y la interfaz solo usa la URL que recibe.
+- `Track.releaseDate` es un `LocalDate`: el mapper convierte el texto de iTunes (por ejemplo
+  `1975-10-31T07:00:00Z`) una sola vez, al recibirlo, y se queda con el día (iTunes lo guarda a las
+  07:00 UTC, así que el día es el buscado sea cual sea la zona horaria). Si no es una fecha, queda
+  vacía y el detalle muestra «-». La interfaz solo le da formato según el idioma del dispositivo.
 - Diseño oscuro: tema siempre oscuro (`#121212`) con acento verde, títulos en
   negrita, carátulas con esquinas de 4 dp y un buscador en forma de píldora blanca con lupa y un
   anillo verde al enfocarlo. Solo cambian el tema y los estilos; los contenedores de las pantallas
@@ -178,11 +206,15 @@ Los fallos de red no se lanzan como excepciones: el repositorio devuelve un `Sea
 Los tests usan MockK en lugar de dobles escritos a mano, Turbine para los `Flow` y `kotlin.test`
 para las aserciones. Se ejecutan en JVM con `./gradlew test`:
 
-- `domain`: caso de uso con el repositorio simulado con MockK.
-- `data`: caché (acierto, fallo y expiración), mapper, repositorio (con caché válida no llama a
-  la red; con caché expirada, refresca) y contrato de `ITunesApi` contra un `MockWebServer`.
-- `presentation`: ViewModel (debounce, cancelación y reintento, con Turbine), semantics de las
-  pantallas, navegación búsqueda → detalle y guardado de la canción seleccionada, con Robolectric.
+- `domain`: caso de uso con el repositorio simulado con MockK y el motivo de los errores
+  (`SearchResult`).
+- `data`: caché (acierto, fallo y expiración), mapper (carátula grande y fecha), repositorio (con
+  caché válida no llama a la red; con caché expirada, refresca; clasifica los fallos en red,
+  servidor o desconocido y los registra sin el texto buscado; no registra la cancelación) y contrato
+  de `ITunesApi` contra un `MockWebServer`.
+- `presentation`: ViewModel (debounce, cancelación, reintento y motivo del error, con Turbine),
+  semantics de las pantallas y su texto de error por motivo, navegación búsqueda → detalle y
+  guardado de la canción seleccionada, con Robolectric.
 
 En un dispositivo o emulador, `./gradlew connectedDebugAndroidTest` ejecuta los tests de
 instrumentación de accesibilidad (`app/src/androidTest`): los chequeos automáticos del Accessibility
@@ -221,10 +253,11 @@ Tomadas en un emulador Pixel 6 (API 37, en español) con la app y la API reales 
 
 | 4. Sin resultados | 5. Sin conexión |
 |---|---|
-| <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje de error en rosa con icono de aviso y botón «Reintentar»"> |
+| <img src="docs/screenshots/04-vacio.png" width="240" alt="Mensaje «No hay resultados para zzqqxx9917kk»"> | <img src="docs/screenshots/05-error.png" width="240" alt="Mensaje «Sin conexión. Comprueba tu red e inténtalo de nuevo.» en rosa con icono de aviso y botón «Reintentar»"> |
 
-El mensaje de vacío cita lo buscado. El de error lleva icono y texto, y se reintenta con el botón
-«Reintentar» (área táctil de 48 dp) o con la tecla de búsqueda del teclado.
+El mensaje de vacío cita lo buscado. El de error lleva icono y texto, dice qué ha fallado (aquí, la
+conexión; si el servicio responde con un error o ocurre algo inesperado, el texto cambia) y se
+reintenta con el botón «Reintentar» (área táctil de 48 dp) o con la tecla de búsqueda del teclado.
 
 ### Fuente al 200 %
 
