@@ -25,6 +25,15 @@ android {
         packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
       }
     }
+
+    // The release build (R8 on), signed with the debug key and with its own application id, so it
+    // installs next to the debug build and can be tried on a device. Not meant for publishing.
+    create("staging") {
+      initWith(getByName("release"))
+      applicationIdSuffix = ".staging"
+      signingConfig = signingConfigs.getByName("debug")
+      matchingFallbacks += "release"
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
