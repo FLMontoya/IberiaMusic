@@ -1,4 +1,4 @@
-package com.plexus.iberiamusic.navigation
+package com.plexus.iberiamusic.presentation.navigation
 
 import com.plexus.iberiamusic.domain.model.Track
 import kotlin.test.assertEquals

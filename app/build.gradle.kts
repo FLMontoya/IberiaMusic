@@ -30,8 +30,6 @@ android {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
-
-  testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
 dependencies {
@@ -40,22 +38,13 @@ dependencies {
   implementation(project(":domain"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.compose.ui)
-  implementation(libs.androidx.compose.material3)
   implementation(libs.androidx.activity.compose)
-  implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.kotlinx.serialization)
   implementation(libs.okhttp)
   implementation(libs.kotlinx.serialization.json)
 
-  testImplementation(platform(libs.androidx.compose.bom))
-  testImplementation(libs.junit)
-  testImplementation(libs.mockk)
-  testImplementation(libs.kotlin.test)
-  testImplementation(libs.kotlinx.coroutines.test)
-  testImplementation(libs.robolectric)
-  testImplementation(libs.androidx.compose.ui.test.junit4)
   debugImplementation(platform(libs.androidx.compose.bom))
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   // Espresso 3.7 needs a newer concurrent-futures than the app resolves on its own; AGP keeps both
