@@ -24,6 +24,7 @@ internal fun saveTrack(track: Track?): List<Any?> =
           track.genre,
           track.durationMillis,
           track.releaseDate,
+          track.largeArtworkUrl,
       )
     }
 
@@ -37,5 +38,6 @@ internal fun restoreTrack(saved: List<Any?>): Track? {
       genre = saved.getOrNull(5) as? String,
       durationMillis = saved.getOrNull(6) as? Long,
       releaseDate = saved.getOrNull(7) as? String,
+      largeArtworkUrl = saved.getOrNull(8) as? String,
   )
 }

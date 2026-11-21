@@ -22,10 +22,4 @@ internal fun formatReleaseDate(raw: String, locale: Locale = Locale.getDefault()
       raw
     }
 
-/**
- * iTunes serves the same cover at any size by changing the size in its URL; the search results only
- * carry the 100 px thumbnail, which would look blurry in the detail.
- */
-internal fun largeArtworkUrl(url: String): String = url.replace("100x100bb", "600x600bb")
-
 private const val ISO_DATE_LENGTH = 10

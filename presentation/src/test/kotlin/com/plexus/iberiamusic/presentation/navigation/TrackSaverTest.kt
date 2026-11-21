@@ -16,6 +16,7 @@ class TrackSaverTest {
             artistName = "Queen",
             albumName = "A Night at the Opera",
             artworkUrl = "https://example.com/art.jpg",
+            largeArtworkUrl = "https://example.com/art-large.jpg",
             genre = "Rock",
             durationMillis = 354_000L,
             releaseDate = "1975-10-31T07:00:00Z",

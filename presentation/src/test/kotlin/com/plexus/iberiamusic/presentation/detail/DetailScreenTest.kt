@@ -111,6 +111,24 @@ class DetailScreenTest {
 
   @Test
   fun `artwork is described with the track name`() {
+    show(
+        fullTrack.copy(
+            artworkUrl = "https://example.com/100x100bb.jpg",
+            largeArtworkUrl = "https://example.com/600x600bb.jpg",
+        ),
+    )
+
+    rule
+        .onNode(
+            hasContentDescription(
+                rule.activity.getString(R.string.detail_artwork, "Bohemian Rhapsody"),
+            ),
+        )
+        .assertExists()
+  }
+
+  @Test
+  fun `artwork still shows when the track only has the thumbnail`() {
     show(fullTrack.copy(artworkUrl = "https://example.com/100x100bb.jpg"))
 
     rule
